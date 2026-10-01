@@ -5,6 +5,28 @@ the OpenStreetMap network, and getting a **before** and an **after**
 network back as QGIS layers (plus OSM PBF files for routers such as
 Valhalla).
 
+## What it does
+
+You draw a proposal as a line layer, here an invented footbridge across
+Monaco's harbour, and the plugin joins it into the OpenStreetMap street
+network. You get the network as it is (**before**) and with your lines
+(**after**), coloured by kind of street with your lines highlighted:
+
+![Before and after networks around the harbour, with the custom line highlighted in the after network](docs/images/before-after.png)
+
+Because both networks are ordinary QGIS layers with travel columns
+(`walk`, `bike`, `car`, `speed_kph`, direction), QGIS's own network
+tools work on them. Running **Service area (from point)** on each shows
+what the proposal changes, here the streets within a 10-minute walk:
+
+![Streets within a 10-minute walk before and after: with the bridge, the far quay comes within reach](docs/images/walk-reach.png)
+
+The **Build scenario network** tool, in the Processing Toolbox:
+
+![The Build scenario network form: area, custom network layer, travel type, speed limit, local OSM file and output folder](docs/images/build-form.png)
+
+Map data in the images © OpenStreetMap contributors (ODbL).
+
 This is a proof of concept and the QGIS front end only. All the network
 logic lives in the separate engine,
 [NetworkForge](https://github.com/Yibbzz/networkforge), which the plugin
