@@ -13,12 +13,8 @@ will install into its own environment and run as a separate program.
 ## Status
 
 Early development. The plugin adds a "NetworkForge" group to the
-Processing Toolbox with four tools:
+Processing Toolbox with three tools:
 
-- **New custom network layer** - an empty line layer for drawing your
-  proposals, with the attributes the engine understands (`highway`,
-  `maxspeed`, `oneway`, ...). Attributes with fixed values get drop-down
-  lists and the others are checked as you type.
 - **Check custom network layer** - checks your lines and attributes in
   seconds, without downloading anything. Problems are listed with a link
   to the guide, and the features concerned are selected.
@@ -41,6 +37,32 @@ The engine goes into a `networkforge` folder inside your QGIS profile
 folder, next to an `engine.log` file that is useful when reporting
 problems. Deleting that folder removes the engine; the plugin installs
 it again when next needed.
+
+## Install
+
+In QGIS, add this plugin's repository once; after that QGIS installs it
+and offers updates like any other plugin:
+
+1. **Plugins > Manage and Install Plugins > Settings**.
+2. Tick **Show also Experimental Plugins**.
+3. Under **Plugin Repositories** click **Add**, give it the name
+   `NetworkForge` and this URL, then **OK**:
+
+   ```
+   https://github.com/Yibbzz/networkforge-qgis/releases/latest/download/plugins.xml
+   ```
+4. Go to the **All** tab, search for **NetworkForge** and click
+   **Install Plugin**.
+
+Alternatively, download the zip from the
+[latest release](https://github.com/Yibbzz/networkforge-qgis/releases/latest)
+and use **Install from ZIP**.
+
+Your custom network layer is any line layer you draw in QGIS. Give it a
+text field called `highway` (and optionally `maxspeed`, `oneway`, ...)
+to describe each line, or leave the fields out and pick a preset when
+you build. Save it as a GeoPackage, not a Shapefile, which shortens
+field names.
 
 ## Requirements
 
@@ -83,7 +105,8 @@ image, for both the long-term release and the latest QGIS.
 
 Pushing a version tag such as `v0.1.0` runs `.github/workflows/release.yml`:
 it builds the plugin zip with `qgis-plugin-ci` and attaches it to a
-GitHub release. If the repository secrets `OSGEO_USERNAME` and
+GitHub release, together with the `plugins.xml` that the install steps
+above point QGIS at. If the repository secrets `OSGEO_USERNAME` and
 `OSGEO_PASSWORD` are set, it also publishes to plugins.qgis.org.
 
 To build a zip by hand: `uvx qgis-plugin-ci package 0.1.0`.

@@ -154,7 +154,7 @@ networkforge-qgis/
 │   │   ├── common.py           # base class: export layer, run engine, select features
 │   │   ├── build_network.py    # "Build scenario network"
 │   │   ├── check_layer.py      # "Check custom network layer"
-│   │   └── new_custom_layer.py # "New custom network layer" (template)
+│   │   └── engine_info.py      # "Engine information" (version, reinstall)
 │   ├── styling.py              # renderers for the result layers (built in code, not .qml)
 │   ├── compat.py               # names that differ between QGIS 3.34, 3.44 and 4
 │   ├── engine_info.json        # saved `info --json` of the pinned engine; forms are built from it
@@ -176,11 +176,8 @@ networkforge-qgis/
    and no OSM file is given (the engine will refuse it).
 2. **Check custom network layer** - runs `check --json`; lists issues,
    selects the offending features, links each to the guide.
-3. **New custom network layer** - creates a GeoPackage line layer with
-   fields `highway`, `maxspeed`, `oneway`, `lanes`, `access`, `bicycle`,
-   `foot`, `motor_vehicle`, `bridge`, `tunnel`, `layer`, `name`, and
-   value-map/constraint widgets from `info.tag_values` / `tag_patterns`,
-   so QGIS enforces valid tags while users draw.
+3. No tool for creating a custom layer: the user decided against it
+   (users make a line layer in QGIS themselves). Don't add one back.
 4. Styles: after-edges coloured by `highway`, custom edges bold/highlighted;
    nodes hidden by default.
 
@@ -226,6 +223,6 @@ networkforge-qgis/
    loaded and styled, progress and cancel working.
 4. **Errors and warnings** - issues/warnings select and highlight features;
    messages link to the guide.
-5. **Check + New layer + styles.**
+5. **Check + styles.**
 6. **Tests + CI.**
 7. **Package and publish as experimental.**

@@ -1,7 +1,8 @@
 name: Release
 
 # Runs when a version tag such as v0.1.0 is pushed: builds the plugin zip,
-# attaches it to a GitHub release, and - once the OSGEO_USERNAME and
+# attaches it and a plugins.xml (a plugin repository QGIS can read) to a
+# GitHub release, and - once the OSGEO_USERNAME and
 # OSGEO_PASSWORD secrets are set - publishes it to plugins.qgis.org.
 on:
   push:
@@ -36,10 +37,10 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           if [ -n "$OSGEO_USERNAME" ]; then
             qgis-plugin-ci release "$version" --release-tag "$GITHUB_REF_NAME" \
-              --github-token "$GITHUB_TOKEN" \
+              --github-token "$GITHUB_TOKEN" --create-plugin-repo \
               --osgeo-username "$OSGEO_USERNAME" --osgeo-password "$OSGEO_PASSWORD"
           else
             echo "No OSGeo account set: attaching the zip to the GitHub release only."
             qgis-plugin-ci release "$version" --release-tag "$GITHUB_REF_NAME" \
-              --github-token "$GITHUB_TOKEN"
+              --github-token "$GITHUB_TOKEN" --create-plugin-repo
           fi
