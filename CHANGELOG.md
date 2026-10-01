@@ -18,3 +18,8 @@
 - Tests for the engine runner and the tools, using a stand-in engine.
 - Warnings and errors that name features now select those features in
   the custom layer, so they are easy to find and fix.
+- "Check custom network layer": validates the lines and their attributes
+  without downloading anything.
+- "New custom network layer": an empty layer with the engine's
+  attributes, drop-down lists and checks.
+- Before and after layers are coloured by kind of street.

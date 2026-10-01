@@ -13,16 +13,24 @@ will install into its own environment and run as a separate program.
 ## Status
 
 Early development. The plugin adds a "NetworkForge" group to the
-Processing Toolbox with two tools:
+Processing Toolbox with four tools:
 
+- **New custom network layer** - an empty line layer for drawing your
+  proposals, with the attributes the engine understands (`highway`,
+  `maxspeed`, `oneway`, ...). Attributes with fixed values get drop-down
+  lists and the others are checked as you type.
+- **Check custom network layer** - checks your lines and attributes in
+  seconds, without downloading anything. Problems are listed with a link
+  to the guide, and the features concerned are selected.
 - **Build scenario network** - choose an area and a layer of your own
   lines, and say how they are travelled: a preset such as `primary_road`
-  for every line, or each feature's own attributes (`highway`,
-  `maxspeed`, ...). OpenStreetMap data is downloaded for the area, or
-  read from a local OSM file (required above 1,000 km2). You get a
-  **Before network** and an **After network** layer, with your lines
+  for every line, or each feature's own attributes. OpenStreetMap data
+  is downloaded for the area, or read from a local OSM file (required
+  above 1,000 km2). You get a **Before network** and an **After
+  network** layer coloured by kind of street, with your lines
   highlighted in the after layer, and `before.osm.pbf` and
-  `after.osm.pbf` in the output folder for routers.
+  `after.osm.pbf` in the output folder for routers. Features named in a
+  warning or error are selected in your layer.
 - **Engine information** - shows the installed engine's version and what
   it supports, and can reinstall it.
 

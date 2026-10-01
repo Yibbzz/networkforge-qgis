@@ -151,10 +151,13 @@ networkforge-qgis/
 │   ├── provider.py
 │   ├── engine.py               # install/version-check/run the engine CLI, parse events
 │   ├── algorithms/
+│   │   ├── common.py           # base class: export layer, run engine, select features
 │   │   ├── build_network.py    # "Build scenario network"
 │   │   ├── check_layer.py      # "Check custom network layer"
 │   │   └── new_custom_layer.py # "New custom network layer" (template)
-│   ├── styles/                 # .qml for edges (custom highlighted) and nodes
+│   ├── styling.py              # renderers for the result layers (built in code, not .qml)
+│   ├── compat.py               # names that differ between QGIS 3.34, 3.44 and 4
+│   ├── engine_info.json        # saved `info --json` of the pinned engine; forms are built from it
 │   └── icons/
 ├── tests/                      # pytest + pytest-qgis
 ├── .github/workflows/          # tests in qgis/qgis Docker image; package + publish
