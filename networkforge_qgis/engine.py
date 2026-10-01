@@ -77,6 +77,11 @@ def engine_exe():
     return venv_dir() / "bin" / "networkforge"
 
 
+def _engine_cmd():
+    """The start of every engine command line (tests swap in a fake engine)."""
+    return [str(engine_exe())]
+
+
 def _venv_python():
     if _WINDOWS:
         return venv_dir() / "Scripts" / "python.exe"
@@ -203,7 +208,7 @@ def installed_version():
         return None
     try:
         result = subprocess.run(
-            [str(engine_exe()), "--version"],
+            [*_engine_cmd(), "--version"],
             capture_output=True,
             stdin=subprocess.DEVNULL,
             text=True,
@@ -276,7 +281,7 @@ def info():
     _log(f"\n[{datetime.now():%Y-%m-%d %H:%M:%S}] $ networkforge info --json")
     with open(log_path(), "a", encoding="utf-8") as log:
         result = subprocess.run(
-            [str(engine_exe()), "info", "--json"],
+            [*_engine_cmd(), "info", "--json"],
             stdout=subprocess.PIPE,
             stderr=log,
             stdin=subprocess.DEVNULL,
@@ -323,7 +328,7 @@ def run(args, feedback, on_event):
     Returns the engine's exit code. Raises EngineCanceled if the user
     cancels; the engine is stopped straight away, even mid-download.
     """
-    cmd = [str(engine_exe()), *[str(a) for a in args]]
+    cmd = [*_engine_cmd(), *[str(a) for a in args]]
     _log(f"\n[{datetime.now():%Y-%m-%d %H:%M:%S}] $ {' '.join(cmd)}")
     with open(log_path(), "a", encoding="utf-8") as log:
         try:

@@ -51,6 +51,21 @@ In QGIS: **Plugins > Manage and Install Plugins > Installed**, tick
 **NetworkForge**. Install the **Plugin Reloader** plugin to reload the
 code after changes without restarting QGIS.
 
+## Tests
+
+The tests use `pytest` and `pytest-qgis` with the Python that QGIS
+uses. On Linux, with [uv](https://docs.astral.sh/uv/) installed:
+
+```sh
+uv venv --python /usr/bin/python3 --system-site-packages .venv
+uv pip install --python .venv/bin/python -r requirements-dev.txt
+QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest
+```
+
+They run in a few seconds: a stand-in for the engine
+(`tests/fake_engine.py`) plays back prepared replies, so nothing is
+installed or downloaded.
+
 ## Limitations
 
 No public transport, no traffic simulation and no turn restrictions yet.

@@ -15,3 +15,4 @@
 - Uses NetworkForge engine v0.5.0: custom lines that don't connect to
   the network now give a warning instead of stopping the build. An
   installed v0.4.0 engine is replaced the next time a tool runs.
+- Tests for the engine runner and the tools, using a stand-in engine.
