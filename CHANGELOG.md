@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.1.4 - 2026-10-01
+
+- Fixed the engine install failing with "No module named pip" on the
+  Flatpak QGIS for Linux: where QGIS's Python has no pip, the installer
+  (uv) is now downloaded directly.
+- Fixed the engine failing to start after installing on the Flatpak
+  QGIS ("reports version None"): the engine now always runs on its own
+  downloaded Python, never one found on the computer.
+- When the engine can't report its version, the reason is now written
+  to `engine.log`.
+
 ## 0.1.2 - 2026-10-01
 
 - The plugin's description now says exactly what is downloaded on first

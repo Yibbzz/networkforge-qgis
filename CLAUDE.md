@@ -48,13 +48,17 @@ This repo is only the QGIS front end.
 - On first use: ensure `uv` is available (use one on PATH, otherwise
   `pip install --target <profile>/networkforge/uv uv` with QGIS's Python -
   uv is a standalone binary in a wheel, and `--target` keeps it out of
-  QGIS's own packages), then create an environment in the QGIS profile
+  QGIS's own packages; where QGIS's Python has no pip, as in the Flatpak
+  QGIS, download uv's own build from its GitHub releases through
+  `QgsBlockingNetworkRequest` instead), then create an environment in the QGIS profile
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
   `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v0.5.0.zip"`
-  (with `uv venv --python 3.12` - uv downloads its own Python, so QGIS's
-  Python version doesn't matter). Don't use the `git+https://` form: it
+  (with `uv venv --python 3.12 --python-preference only-managed` - uv
+  downloads its own Python, so QGIS's Python version doesn't matter.
+  Without `only-managed` uv reuses a matching Python it finds; the
+  Flatpak QGIS's Python then leaks QGIS's numpy into the engine). Don't use the `git+https://` form: it
   needs git installed, which most Windows users don't have.
 - When a tool first needs the engine (not on QGIS startup, which would
   slow every start): run `networkforge --version`; install or replace

@@ -5,17 +5,24 @@ folder and is only ever run as a separate process through its command
 line. It is never imported into QGIS's Python.
 """
 
+import importlib.util
+import io
 import json
 import os
+import platform
 import queue
 import shutil
 import subprocess
 import sys
+import tarfile
 import threading
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
-from qgis.core import QgsApplication
+from qgis.core import QgsApplication, QgsBlockingNetworkRequest
+from qgis.PyQt.QtCore import QUrl
+from qgis.PyQt.QtNetwork import QNetworkRequest
 
 # The engine's CLI flags, JSON events and exit codes are the contract, so
 # the version is pinned here and nowhere else.
@@ -31,6 +38,8 @@ ENGINE_PYTHON = "3.12"
 # installed yet). Regenerate it whenever ENGINE_VERSION changes.
 BUNDLED_INFO_PATH = Path(__file__).parent / "engine_info.json"
 UV_INSTALL_GUIDE = "https://docs.astral.sh/uv/getting-started/installation/"
+# uv's own builds, for a QGIS whose Python has no pip (the Flatpak one).
+UV_DOWNLOADS = "https://github.com/astral-sh/uv/releases/latest/download"
 
 _WINDOWS = os.name == "nt"
 # Stops a console window flashing up on Windows.
@@ -150,10 +159,13 @@ def _run_logged(cmd, feedback, env):
     return proc.wait()
 
 
+def _own_uv_name():
+    return "uv.exe" if _WINDOWS else "uv"
+
+
 def _own_uv():
-    """The plugin's own copy of uv, wherever pip put it, or None."""
-    name = "uv.exe" if _WINDOWS else "uv"
-    return next((p for p in _uv_dir().rglob(name) if p.is_file()), None)
+    """The plugin's own copy of uv, wherever it was put, or None."""
+    return next((p for p in _uv_dir().rglob(_own_uv_name()) if p.is_file()), None)
 
 
 def _find_uv():
@@ -174,25 +186,97 @@ def _qgis_python():
     return Path(sys.executable)
 
 
+def _uv_archive_name():
+    """The file name of uv's own build for this computer, or None."""
+    machine = {"x86_64": "x86_64", "amd64": "x86_64",
+               "aarch64": "aarch64", "arm64": "aarch64"}.get(platform.machine().lower())
+    if machine is None:
+        return None
+    if _WINDOWS:
+        return f"uv-{machine}-pc-windows-msvc.zip"
+    if sys.platform == "darwin":
+        return f"uv-{machine}-apple-darwin.tar.gz"
+    if sys.platform.startswith("linux"):
+        # The musl build needs nothing from the system it runs on.
+        return f"uv-{machine}-unknown-linux-musl.tar.gz"
+    return None
+
+
+def _unpack_uv(name, data):
+    """Save the uv program out of a downloaded archive; False if it has none."""
+    program = _own_uv_name()
+    content = None
+    if name.endswith(".zip"):
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            for member in archive.namelist():
+                if Path(member).name == program:
+                    content = archive.read(member)
+    else:
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
+            for member in archive.getmembers():
+                if member.isfile() and Path(member.name).name == program:
+                    content = archive.extractfile(member).read()
+    if content is None:
+        return False
+    _uv_dir().mkdir(parents=True, exist_ok=True)
+    target = _uv_dir() / program
+    target.write_bytes(content)
+    target.chmod(0o755)
+    return True
+
+
+def _download_uv(feedback):
+    """Fetch uv's own build into the plugin's folder; True if that worked.
+
+    The download goes through QGIS, so it uses QGIS's proxy settings.
+    """
+    name = _uv_archive_name()
+    if name is None:
+        _log(f"no uv download for {sys.platform} {platform.machine()}")
+        return False
+    url = f"{UV_DOWNLOADS}/{name}"
+    _log(f"\n[{datetime.now():%Y-%m-%d %H:%M:%S}] downloading {url}")
+    request = QgsBlockingNetworkRequest()
+    request.get(QNetworkRequest(QUrl(url)), True, feedback)
+    if feedback is not None and feedback.isCanceled():
+        raise EngineCanceled()
+    data = bytes(request.reply().content())
+    if request.errorMessage() or not data:
+        _log(f"download failed: {request.errorMessage() or 'empty reply'}")
+        return False
+    try:
+        found = _unpack_uv(name, data)
+    except (OSError, tarfile.TarError, zipfile.BadZipFile) as err:
+        _log(f"could not unpack {name}: {err}")
+        return False
+    if not found:
+        _log(f"{name} does not contain uv")
+    return found
+
+
 def _ensure_uv(feedback):
     """Return the path to uv, fetching it into the plugin's folder if needed.
 
     uv is a single program shipped inside a Python package. It goes into
     its own folder (pip's --target), so QGIS's Python is left untouched.
+    Where QGIS's Python has no pip, uv's own build is downloaded instead.
     """
     uv = _find_uv()
     if uv is not None:
         return uv
     if feedback is not None:
         feedback.pushInfo("Fetching uv (the installer used for the engine)...")
-    code = _run_logged(
-        [_qgis_python(), "-m", "pip", "install", "--upgrade",
-         "--target", _uv_dir(), "uv"],
-        feedback,
-        dict(os.environ),
-    )
-    uv = _own_uv()
-    if code != 0 or uv is None:
+    if importlib.util.find_spec("pip") is not None:
+        _run_logged(
+            [_qgis_python(), "-m", "pip", "install", "--upgrade",
+             "--target", _uv_dir(), "uv"],
+            feedback,
+            dict(os.environ),
+        )
+        uv = _own_uv()
+    if uv is None and _download_uv(feedback):
+        uv = _own_uv()
+    if uv is None:
         raise EngineError(
             "Could not fetch uv, the installer used for the NetworkForge "
             "engine. Check your internet connection and try again. If it "
@@ -218,10 +302,13 @@ def installed_version():
             creationflags=_NO_WINDOW,
             timeout=120,
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.TimeoutExpired) as err:
+        _log(f"the engine did not report its version: {err}")
         return None
     words = result.stdout.split()  # "networkforge 0.5.0"
     if result.returncode != 0 or not words:
+        _log(f"the engine did not report its version (exit code "
+             f"{result.returncode}):\n{result.stdout}{result.stderr}")
         return None
     return words[-1]
 
@@ -234,7 +321,11 @@ def install(feedback=None):
         shutil.rmtree(venv_dir(), ignore_errors=True)
     steps = (
         ("Creating the engine's Python environment...",
-         [uv, "venv", "--python", ENGINE_PYTHON, venv_dir()]),
+         # uv's own Python, never one found on the computer: the Flatpak
+         # QGIS's Python mixes QGIS's packages (an older numpy) into the
+         # engine's environment even with QGIS's settings removed.
+         [uv, "venv", "--python", ENGINE_PYTHON,
+          "--python-preference", "only-managed", venv_dir()]),
         (f"Installing NetworkForge engine {ENGINE_VERSION}...",
          [uv, "pip", "install", "--python", _venv_python(), ENGINE_REQUIREMENT]),
     )

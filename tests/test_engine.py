@@ -98,3 +98,52 @@ def test_run_explains_an_engine_that_will_not_start(fake_engine, feedback, monke
 def test_installed_version_is_none_without_an_engine(monkeypatch, tmp_path):
     monkeypatch.setattr(engine, "base_dir", lambda: tmp_path)
     assert engine.installed_version() is None
+
+
+def _uv_archive(program):
+    """A stand-in for uv's download: a .tar.gz holding one small program."""
+    import io
+    import tarfile
+
+    data = io.BytesIO()
+    with tarfile.open(fileobj=data, mode="w:gz") as archive:
+        member = tarfile.TarInfo(f"uv-x86_64-unknown-linux-musl/{program}")
+        member.size = 4
+        archive.addfile(member, io.BytesIO(b"#!uv"))
+    return data.getvalue()
+
+
+def test_uv_is_unpacked_from_its_own_download(monkeypatch, tmp_path):
+    monkeypatch.setattr(engine, "base_dir", lambda: tmp_path)
+    monkeypatch.setattr(engine, "_WINDOWS", False)
+
+    assert engine._unpack_uv("uv.tar.gz", _uv_archive("uv"))
+
+    uv = engine._own_uv()
+    assert uv.read_bytes() == b"#!uv"
+    assert uv.stat().st_mode & 0o111  # can be run
+    assert not engine._unpack_uv("uv.tar.gz", _uv_archive("something-else"))
+
+
+def test_uv_is_downloaded_when_qgis_python_has_no_pip(monkeypatch, tmp_path, feedback):
+    # The Flatpak QGIS: "/usr/bin/python3: No module named pip".
+    monkeypatch.setattr(engine, "base_dir", lambda: tmp_path)
+    monkeypatch.setattr(engine.shutil, "which", lambda name: None)
+    monkeypatch.setattr(engine.importlib.util, "find_spec", lambda name: None)
+    monkeypatch.setattr(engine, "_run_logged", lambda *args: pytest.fail("ran pip"))
+    monkeypatch.setattr(
+        engine, "_download_uv",
+        lambda feedback: engine._unpack_uv("uv.tar.gz", _uv_archive(engine._own_uv_name())),
+    )
+
+    assert engine._ensure_uv(feedback) == engine._own_uv()
+
+
+def test_missing_uv_is_explained(monkeypatch, tmp_path, feedback):
+    monkeypatch.setattr(engine, "base_dir", lambda: tmp_path)
+    monkeypatch.setattr(engine.shutil, "which", lambda name: None)
+    monkeypatch.setattr(engine.importlib.util, "find_spec", lambda name: None)
+    monkeypatch.setattr(engine, "_download_uv", lambda feedback: False)
+
+    with pytest.raises(engine.EngineError, match="install uv yourself"):
+        engine._ensure_uv(feedback)
