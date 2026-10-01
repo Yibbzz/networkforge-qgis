@@ -16,3 +16,5 @@
   the network now give a warning instead of stopping the build. An
   installed v0.4.0 engine is replaced the next time a tool runs.
 - Tests for the engine runner and the tools, using a stand-in engine.
+- Warnings and errors that name features now select those features in
+  the custom layer, so they are easy to find and fix.

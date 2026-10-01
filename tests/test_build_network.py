@@ -13,7 +13,7 @@ from qgis.core import (
 )
 
 from networkforge_qgis import engine
-from networkforge_qgis.algorithms.build_network import ID_FIELD, parse_tags
+from networkforge_qgis.algorithms.common import ID_FIELD, parse_tags
 
 ALGORITHM = "networkforge:build_network"
 # West of Greenwich, so the western longitude is negative.
@@ -195,7 +195,7 @@ def test_progress_and_warnings_reach_the_user(build, fake_engine, feedback):
 
     assert feedback.progress == [0, 50, 100]
     assert feedback.progress_texts[:2] == ["Checking", "Snapping"]
-    assert feedback.warnings == ["1 custom feature(s) don't connect"]
+    assert feedback.warnings[0] == "1 custom feature(s) don't connect"
 
 
 def test_engine_error_lists_the_features_and_links_the_guide(build, fake_engine):
@@ -264,3 +264,90 @@ def test_area_over_the_download_limit_warns_unless_an_osm_file_is_given(
     osm.write_bytes(b"")
     build(EXTENT=big, OSM_FILE=str(osm))
     assert not feedback.warnings
+
+
+def test_warning_selects_the_features_it_is_about(build, fake_engine, feedback, lines):
+    first, second, third = sorted(f.id() for f in lines.getFeatures())
+    lines.selectByIds([first])
+    fake_engine.play([
+        {"event": "warning", "message": "Don't connect", "features": [third]},
+        {"event": "warning", "message": "Set aside a field", "fields": ["length"]},
+        {"event": "warning", "message": "Odd", "features": [second, third]},
+        DONE,
+    ])
+
+    build()
+
+    assert sorted(lines.selectedFeatureIds()) == [second, third]
+    assert feedback.warnings[-1] == 'The 2 features concerned are now selected in "plan".'
+
+
+def test_error_selects_the_broken_features(build, fake_engine, lines):
+    first, second, third = sorted(f.id() for f in lines.getFeatures())
+    fake_engine.play([
+        {"event": "warning", "message": "Odd", "features": [first]},
+        {"event": "error", "type": "InvalidTagsError", "guide": "fixing-tag-errors",
+         "message": "1 custom tag problem(s):\n  - feature 3: no highway tag",
+         "issues": [{"feature": third, "message": "no highway tag"},
+                    {"feature": None, "message": "about the whole layer"}]},
+    ], exit_code=3)
+
+    with pytest.raises(QgsProcessingException) as raised:
+        build()
+
+    assert lines.selectedFeatureIds() == [third]
+    assert 'The feature concerned is now selected in "plan".' in str(raised.value)
+
+
+def test_selection_is_left_alone_when_nothing_is_wrong(build, lines):
+    chosen = sorted(f.id() for f in lines.getFeatures())[:2]
+    lines.selectByIds(chosen)
+
+    build()
+
+    assert sorted(lines.selectedFeatureIds()) == chosen
+
+
+def test_a_layer_given_as_a_file_is_not_selected_in(build, fake_engine, feedback, tmp_path):
+    path = tmp_path / "plan.geojson"
+    path.write_text(
+        '{"type":"FeatureCollection","features":[{"type":"Feature",'
+        '"properties":{"highway":"cycleway"},"geometry":{"type":"LineString",'
+        '"coordinates":[[-3.69,40.41],[-3.68,40.42]]}}]}'
+    )
+    fake_engine.play([{"event": "warning", "message": "Don't connect", "features": [0]}, DONE])
+
+    build(CUSTOM=str(path))
+
+    assert feedback.warnings == ["Don't connect"]
+
+
+def test_selection_works_when_run_in_the_background_like_the_toolbox_does(
+        provider, fake_engine, lines, feedback, tmp_path, qgis_app):
+    import time
+
+    from qgis.core import QgsApplication, QgsProcessingAlgRunnerTask, QgsProcessingContext
+
+    third = sorted(f.id() for f in lines.getFeatures())[2]
+    fake_engine.play([{"event": "warning", "message": "Don't connect", "features": [third]},
+                      DONE])
+    algorithm = QgsApplication.processingRegistry().algorithmById(ALGORITHM)
+    context = QgsProcessingContext()
+    context.setProject(QgsProject.instance())
+    task = QgsProcessingAlgRunnerTask(
+        algorithm,
+        {"EXTENT": EXTENT, "CUSTOM": lines, "OUTPUT_FOLDER": str(tmp_path / "out")},
+        context, feedback,
+    )
+    finished = []
+    task.executed.connect(lambda ok, results: finished.append(ok))
+    QgsApplication.taskManager().addTask(task)
+
+    deadline = time.monotonic() + 60
+    while not finished and time.monotonic() < deadline:
+        qgis_app.processEvents()
+        time.sleep(0.01)
+    qgis_app.processEvents()
+
+    assert finished == [True]
+    assert lines.selectedFeatureIds() == [third]
