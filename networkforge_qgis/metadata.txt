@@ -1,0 +1,21 @@
+[general]
+name=NetworkForge
+qgisMinimumVersion=3.34
+description=Add your own proposed roads, cycleways and paths to the OpenStreetMap network and get before/after networks back.
+about=NetworkForge integrates a layer of proposed roads, cycleways and paths into the OpenStreetMap network and returns a "before" and an "after" network as QGIS layers, plus OSM PBF files for routers such as Valhalla.
+    This plugin is the QGIS front end. The network logic lives in the separate NetworkForge engine (https://github.com/Yibbzz/networkforge), which the plugin installs into its own environment and runs as a separate process.
+    Proof of concept. Limitations: no public transport, no traffic simulation, no turn restrictions yet.
+    Map data © OpenStreetMap contributors (ODbL).
+version=0.1.0
+author=Nathan
+email=nathanleeks@gmail.com
+license=GPL-3.0
+homepage=https://github.com/Yibbzz/networkforge-qgis
+repository=https://github.com/Yibbzz/networkforge-qgis
+tracker=https://github.com/Yibbzz/networkforge-qgis/issues
+category=Analysis
+tags=network,openstreetmap,osm,routing,scenario,transport
+icon=icons/networkforge.svg
+hasProcessingProvider=yes
+experimental=True
+deprecated=False
