@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.1 - 2026-10-01
+
+- The plugin now says it supports QGIS 4, so QGIS 4 lists it when
+  installing from the plugin repository.
+
 ## 0.1.0 - 2026-10-01
 
 First release (experimental).
