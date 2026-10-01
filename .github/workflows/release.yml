@@ -1,0 +1,45 @@
+name: Release
+
+# Runs when a version tag such as v0.1.0 is pushed: builds the plugin zip,
+# attaches it to a GitHub release, and - once the OSGEO_USERNAME and
+# OSGEO_PASSWORD secrets are set - publishes it to plugins.qgis.org.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install qgis-plugin-ci
+        run: pip install qgis-plugin-ci
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release view "$GITHUB_REF_NAME" || gh release create "$GITHUB_REF_NAME" --generate-notes
+
+      - name: Package and publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OSGEO_USERNAME: ${{ secrets.OSGEO_USERNAME }}
+          OSGEO_PASSWORD: ${{ secrets.OSGEO_PASSWORD }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ -n "$OSGEO_USERNAME" ]; then
+            qgis-plugin-ci release "$version" --release-tag "$GITHUB_REF_NAME" \
+              --github-token "$GITHUB_TOKEN" \
+              --osgeo-username "$OSGEO_USERNAME" --osgeo-password "$OSGEO_PASSWORD"
+          else
+            echo "No OSGeo account set: attaching the zip to the GitHub release only."
+            qgis-plugin-ci release "$version" --release-tag "$GITHUB_REF_NAME" \
+              --github-token "$GITHUB_TOKEN"
+          fi

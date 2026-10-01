@@ -79,6 +79,15 @@ needs an internet connection. To skip them: `pytest -m "not engine"`.
 GitHub runs all of them on every push, in the official QGIS Docker
 image, for both the long-term release and the latest QGIS.
 
+## Releasing
+
+Pushing a version tag such as `v0.1.0` runs `.github/workflows/release.yml`:
+it builds the plugin zip with `qgis-plugin-ci` and attaches it to a
+GitHub release. If the repository secrets `OSGEO_USERNAME` and
+`OSGEO_PASSWORD` are set, it also publishes to plugins.qgis.org.
+
+To build a zip by hand: `uvx qgis-plugin-ci package 0.1.0`.
+
 ## Limitations
 
 No public transport, no traffic simulation and no turn restrictions yet.

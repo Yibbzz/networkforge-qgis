@@ -7,7 +7,6 @@ spellings; QGIS 3.34 only has the old ones.
 from qgis.core import (
     Qgis,
     QgsField,
-    QgsMapLayer,
     QgsProcessing,
     QgsProcessingFeatureSource,
     QgsProcessingParameterDefinition,
@@ -56,8 +55,11 @@ def save_default_style(layer, name, description):
     Returns "" on success, otherwise what went wrong.
     """
     if hasattr(layer, "saveStyleToDatabaseV2"):  # QGIS 3.44 and later
-        results, error = layer.saveStyleToDatabaseV2(name, description, True, "")
-        failed = (QgsMapLayer.SaveStyleResult.QmlGenerationFailed
-                  | QgsMapLayer.SaveStyleResult.DatabaseWriteFailed)
-        return (error or "the style could not be written") if results & failed else ""
-    return layer.saveStyleToDatabase(name, description, True, "")
+        _, error = layer.saveStyleToDatabaseV2(name, description, True, "")
+    else:
+        error = layer.saveStyleToDatabase(name, description, True, "")
+    # The result is judged by whether the style is there: the returned
+    # flags differ between QGIS versions, and a message can be a mere note.
+    if layer.listStylesInDatabase()[0] > 0:
+        return ""
+    return error or "the style could not be written"
