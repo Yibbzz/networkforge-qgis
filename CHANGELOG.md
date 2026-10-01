@@ -23,3 +23,5 @@
 - "New custom network layer": an empty layer with the engine's
   attributes, drop-down lists and checks.
 - Before and after layers are coloured by kind of street.
+- End-to-end tests against the real engine, and GitHub CI on QGIS LTR
+  and latest.

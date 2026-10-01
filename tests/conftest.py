@@ -93,3 +93,23 @@ class Feedback(QgsProcessingFeedback):
 @pytest.fixture
 def feedback():
     return Feedback()
+
+
+@pytest.fixture(scope="session")
+def real_engine():
+    """The real engine, installed once and kept between test runs.
+
+    It goes into NF_TEST_ENGINE_DIR, or .pytest_cache/networkforge-engine
+    in the repository. Installing needs an internet connection.
+    """
+    import os
+
+    folder = Path(os.environ.get(
+        "NF_TEST_ENGINE_DIR",
+        Path(__file__).parent.parent / ".pytest_cache" / "networkforge-engine",
+    ))
+    patch = pytest.MonkeyPatch()
+    patch.setattr(engine, "base_dir", lambda: folder)
+    engine.ensure_installed()
+    yield engine
+    patch.undo()

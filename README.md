@@ -70,9 +70,14 @@ uv pip install --python .venv/bin/python -r requirements-dev.txt
 QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest
 ```
 
-They run in a few seconds: a stand-in for the engine
-(`tests/fake_engine.py`) plays back prepared replies, so nothing is
-installed or downloaded.
+Most tests use a stand-in for the engine (`tests/fake_engine.py`) that
+plays back prepared replies, so they run in seconds. The end-to-end
+tests (`-m engine`) use the real engine on a tiny hand-made street grid
+(`tests/data/grid.osm`); their first run installs the engine, which
+needs an internet connection. To skip them: `pytest -m "not engine"`.
+
+GitHub runs all of them on every push, in the official QGIS Docker
+image, for both the long-term release and the latest QGIS.
 
 ## Limitations
 

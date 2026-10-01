@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="networkforge-qgis tests">
+  <node id="100" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4000000" lon="-3.7000000"/>
+  <node id="101" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4000000" lon="-3.6988000"/>
+  <node id="102" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4000000" lon="-3.6976000"/>
+  <node id="103" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4000000" lon="-3.6964000"/>
+  <node id="110" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4009000" lon="-3.7000000"/>
+  <node id="111" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4009000" lon="-3.6988000"/>
+  <node id="112" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4009000" lon="-3.6976000"/>
+  <node id="113" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4009000" lon="-3.6964000"/>
+  <node id="120" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4018000" lon="-3.7000000"/>
+  <node id="121" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4018000" lon="-3.6988000"/>
+  <node id="122" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4018000" lon="-3.6976000"/>
+  <node id="123" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4018000" lon="-3.6964000"/>
+  <node id="130" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4027000" lon="-3.7000000"/>
+  <node id="131" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4027000" lon="-3.6988000"/>
+  <node id="132" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4027000" lon="-3.6976000"/>
+  <node id="133" version="1" timestamp="2026-01-01T00:00:00Z" lat="40.4027000" lon="-3.6964000"/>
+  <way id="1001" version="1" timestamp="2026-01-01T00:00:00Z">
+    <nd ref="100"/>
+    <nd ref="101"/>
+    <nd ref="102"/>
+    <nd ref="103"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Row 0"/>
+    <tag k="maxspeed" v="30"/>
+  </way>
+  <way id="1002" version="1" timestamp="2026-01-01T00:00:00Z">
+    <nd ref="110"/>
+    <nd ref="111"/>
+    <nd ref="112"/>
+    <nd ref="113"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Row 1"/>
+    <tag k="maxspeed" v="30"/>
+  </way>
+  <way id="1003" version="1" timestamp="2026-01-01T00:00:00Z">
+    <nd ref="120"/>
+    <nd ref="121"/>
+    <nd ref="122"/>
+    <nd ref="123"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Row 2"/>
+    <tag k="maxspeed" v="30"/>
+  </way>
+  <way id="1004" version="1" timestamp="2026-01-01T00:00:00Z">
+    <nd ref="130"/>
+    <nd ref="131"/>
+    <nd ref="132"/>
+    <nd ref="133"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Row 3"/>
+    <tag k="maxspeed" v="30"/>
+  </way>
+  <way id="1005" version="1" timestamp="2026-01-01T00:00:00Z">
+    <nd ref="100"/>
+    <nd ref="110"/>
+    <nd ref="120"/>
+    <nd ref="130"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Column 0"/>
+  </way>
+  <way id="1006" version="1" timestamp="2026-01-01T00:00:00Z">
+    <nd ref="101"/>
+    <nd ref="111"/>
+    <nd ref="121"/>
+    <nd ref="131"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Column 1"/>
+  </way>
+  <way id="1007" version="1" timestamp="2026-01-01T00:00:00Z">
+    <nd ref="102"/>
+    <nd ref="112"/>
+    <nd ref="122"/>
+    <nd ref="132"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Column 2"/>
+  </way>
+  <way id="1008" version="1" timestamp="2026-01-01T00:00:00Z">
+    <nd ref="103"/>
+    <nd ref="113"/>
+    <nd ref="123"/>
+    <nd ref="133"/>
+    <tag k="highway" v="footway"/>
+    <tag k="name" v="East path"/>
+  </way>
+</osm>

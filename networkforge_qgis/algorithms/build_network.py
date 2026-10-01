@@ -160,7 +160,7 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
         area = measure.measureArea(
             self.parameterAsExtentGeometry(parameters, self.EXTENT, context, wgs84)
         ) / 1e6
-        feedback.pushInfo(f"Area: about {area:,.0f} km2")
+        feedback.pushInfo(f"Area: about {area:,.1f} km2")
         limit = info["max_overpass_area_km2"]
         if area > limit and not osm_file:
             feedback.pushWarning(
