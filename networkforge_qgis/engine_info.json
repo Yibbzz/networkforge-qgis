@@ -1,0 +1,400 @@
+{
+ "event": "info",
+ "version": "0.5.0",
+ "presets": {
+  "motorway": {
+   "tags": {
+    "highway": "motorway",
+    "oneway": "no"
+   },
+   "modes": [
+    "drive",
+    "drive_service"
+   ]
+  },
+  "trunk_road": {
+   "tags": {
+    "highway": "trunk",
+    "oneway": "no"
+   },
+   "modes": [
+    "drive",
+    "drive_service",
+    "walk",
+    "bike"
+   ]
+  },
+  "primary_road": {
+   "tags": {
+    "highway": "primary",
+    "oneway": "no"
+   },
+   "modes": [
+    "drive",
+    "drive_service",
+    "walk",
+    "bike"
+   ]
+  },
+  "secondary_road": {
+   "tags": {
+    "highway": "secondary",
+    "oneway": "no"
+   },
+   "modes": [
+    "drive",
+    "drive_service",
+    "walk",
+    "bike"
+   ]
+  },
+  "tertiary_road": {
+   "tags": {
+    "highway": "tertiary",
+    "oneway": "no"
+   },
+   "modes": [
+    "drive",
+    "drive_service",
+    "walk",
+    "bike"
+   ]
+  },
+  "residential_street": {
+   "tags": {
+    "highway": "residential",
+    "oneway": "no"
+   },
+   "modes": [
+    "drive",
+    "drive_service",
+    "walk",
+    "bike"
+   ]
+  },
+  "service_road": {
+   "tags": {
+    "highway": "service",
+    "oneway": "no"
+   },
+   "modes": [
+    "drive_service",
+    "walk",
+    "bike"
+   ]
+  },
+  "cycleway": {
+   "tags": {
+    "highway": "cycleway",
+    "oneway": "no"
+   },
+   "modes": [
+    "bike"
+   ]
+  },
+  "footpath": {
+   "tags": {
+    "highway": "footway"
+   },
+   "modes": [
+    "walk"
+   ]
+  },
+  "shared_path": {
+   "tags": {
+    "highway": "path",
+    "bicycle": "designated",
+    "foot": "designated"
+   },
+   "modes": [
+    "walk",
+    "bike"
+   ]
+  },
+  "pedestrian_street": {
+   "tags": {
+    "highway": "pedestrian"
+   },
+   "modes": [
+    "walk",
+    "bike"
+   ]
+  },
+  "car_free_street": {
+   "tags": {
+    "highway": "residential",
+    "motor_vehicle": "no",
+    "oneway": "no"
+   },
+   "modes": [
+    "walk",
+    "bike"
+   ]
+  }
+ },
+ "network_types": [
+  "all",
+  "all_public",
+  "bike",
+  "drive",
+  "drive_service",
+  "walk"
+ ],
+ "modes": [
+  "drive",
+  "drive_service",
+  "walk",
+  "bike"
+ ],
+ "max_overpass_area_km2": 1000,
+ "osm_formats": [
+  ".osm",
+  ".osm.pbf",
+  ".pbf",
+  ".osm.gz",
+  ".osm.bz2"
+ ],
+ "gpkg_edge_columns": [
+  "car",
+  "bike",
+  "walk",
+  "speed_kph",
+  "length_m",
+  "car_minutes",
+  "bike_minutes",
+  "walk_minutes",
+  "car_direction",
+  "bike_direction"
+ ],
+ "tag_keys": [
+  "access",
+  "area",
+  "bicycle",
+  "bicycle_road",
+  "bridge",
+  "bus",
+  "cyclestreet",
+  "cycleway",
+  "cycleway:both",
+  "cycleway:left",
+  "cycleway:right",
+  "foot",
+  "ford",
+  "goods",
+  "hgv",
+  "highway",
+  "horse",
+  "incline",
+  "junction",
+  "lanes",
+  "lanes:backward",
+  "lanes:forward",
+  "layer",
+  "lit",
+  "maxaxleload",
+  "maxheight",
+  "maxlength",
+  "maxspeed",
+  "maxspeed:backward",
+  "maxspeed:forward",
+  "maxspeed:hgv",
+  "maxweight",
+  "maxwidth",
+  "motor_vehicle",
+  "motorcar",
+  "motorcycle",
+  "name",
+  "oneway",
+  "oneway:bicycle",
+  "oneway:bus",
+  "oneway:psv",
+  "psv",
+  "ref",
+  "sac_scale",
+  "segregated",
+  "service",
+  "sidewalk",
+  "sidewalk:both",
+  "sidewalk:left",
+  "sidewalk:right",
+  "smoothness",
+  "surface",
+  "toll",
+  "tracktype",
+  "tunnel",
+  "vehicle",
+  "wheelchair",
+  "width"
+ ],
+ "tag_values": {
+  "highway": [
+   "bridleway",
+   "bus_guideway",
+   "busway",
+   "corridor",
+   "cycleway",
+   "footway",
+   "living_street",
+   "motorway",
+   "motorway_link",
+   "path",
+   "pedestrian",
+   "primary",
+   "primary_link",
+   "residential",
+   "road",
+   "secondary",
+   "secondary_link",
+   "service",
+   "steps",
+   "tertiary",
+   "tertiary_link",
+   "track",
+   "trunk",
+   "trunk_link",
+   "unclassified"
+  ],
+  "oneway": [
+   "-1",
+   "0",
+   "1",
+   "alternating",
+   "false",
+   "no",
+   "reversible",
+   "true",
+   "yes"
+  ],
+  "access": [
+   "agricultural",
+   "customers",
+   "delivery",
+   "designated",
+   "destination",
+   "discouraged",
+   "dismount",
+   "emergency",
+   "forestry",
+   "military",
+   "no",
+   "official",
+   "permissive",
+   "permit",
+   "private",
+   "restricted",
+   "unknown",
+   "use_sidepath",
+   "yes"
+  ],
+  "vehicle": [
+   "agricultural",
+   "customers",
+   "delivery",
+   "designated",
+   "destination",
+   "discouraged",
+   "dismount",
+   "emergency",
+   "forestry",
+   "military",
+   "no",
+   "official",
+   "permissive",
+   "permit",
+   "private",
+   "restricted",
+   "unknown",
+   "use_sidepath",
+   "yes"
+  ],
+  "motor_vehicle": [
+   "agricultural",
+   "customers",
+   "delivery",
+   "designated",
+   "destination",
+   "discouraged",
+   "dismount",
+   "emergency",
+   "forestry",
+   "military",
+   "no",
+   "official",
+   "permissive",
+   "permit",
+   "private",
+   "restricted",
+   "unknown",
+   "use_sidepath",
+   "yes"
+  ],
+  "motorcar": [
+   "agricultural",
+   "customers",
+   "delivery",
+   "designated",
+   "destination",
+   "discouraged",
+   "dismount",
+   "emergency",
+   "forestry",
+   "military",
+   "no",
+   "official",
+   "permissive",
+   "permit",
+   "private",
+   "restricted",
+   "unknown",
+   "use_sidepath",
+   "yes"
+  ],
+  "foot": [
+   "agricultural",
+   "customers",
+   "delivery",
+   "designated",
+   "destination",
+   "discouraged",
+   "dismount",
+   "emergency",
+   "forestry",
+   "military",
+   "no",
+   "official",
+   "permissive",
+   "permit",
+   "private",
+   "restricted",
+   "unknown",
+   "use_sidepath",
+   "yes"
+  ],
+  "bicycle": [
+   "agricultural",
+   "customers",
+   "delivery",
+   "designated",
+   "destination",
+   "discouraged",
+   "dismount",
+   "emergency",
+   "forestry",
+   "military",
+   "no",
+   "official",
+   "permissive",
+   "permit",
+   "private",
+   "restricted",
+   "unknown",
+   "use_sidepath",
+   "yes"
+  ]
+ },
+ "tag_patterns": {
+  "maxspeed": "^(\\d+(\\.\\d+)?( mph| knots)?|[A-Z]{2}:[a-z_]+|none|walk|signals|variable)$",
+  "lanes": "^[1-9]\\d*$",
+  "layer": "^-?\\d+$"
+ }
+}

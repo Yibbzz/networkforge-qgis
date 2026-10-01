@@ -7,9 +7,11 @@ line. It is never imported into QGIS's Python.
 
 import json
 import os
+import queue
 import shutil
 import subprocess
 import sys
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -17,13 +19,17 @@ from qgis.core import QgsApplication
 
 # The engine's CLI flags, JSON events and exit codes are the contract, so
 # the version is pinned here and nowhere else.
-ENGINE_VERSION = "0.4.0"
+ENGINE_VERSION = "0.5.0"
 ENGINE_REPO = "https://github.com/Yibbzz/networkforge"
 # The tag's zip rather than "git+https://...", so users don't need git.
 ENGINE_REQUIREMENT = (
     f"networkforge @ {ENGINE_REPO}/archive/refs/tags/v{ENGINE_VERSION}.zip"
 )
 ENGINE_PYTHON = "3.12"
+# What `networkforge info --json` prints for the pinned version, saved so
+# forms can be built without starting the engine (slow, and it may not be
+# installed yet). Regenerate it whenever ENGINE_VERSION changes.
+BUNDLED_INFO_PATH = Path(__file__).parent / "engine_info.json"
 UV_INSTALL_GUIDE = "https://docs.astral.sh/uv/getting-started/installation/"
 
 _WINDOWS = os.name == "nt"
@@ -135,6 +141,7 @@ def _run_logged(cmd, feedback, env):
                 proc.wait()
                 raise EngineCanceled()
             feedback.pushConsoleInfo(line.rstrip())
+    proc.stdout.close()
     return proc.wait()
 
 
@@ -208,7 +215,7 @@ def installed_version():
         )
     except (OSError, subprocess.TimeoutExpired):
         return None
-    words = result.stdout.split()  # "networkforge 0.4.0"
+    words = result.stdout.split()  # "networkforge 0.5.0"
     if result.returncode != 0 or not words:
         return None
     return words[-1]
@@ -290,3 +297,82 @@ def info():
         raise EngineError(
             f"The engine's reply could not be read. Details: {log_path()}"
         )
+
+
+def bundled_info():
+    """What the pinned engine supports, read from the saved copy of `info`."""
+    with open(BUNDLED_INFO_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def guide_url(guide):
+    """The web address of an engine guide, for the pinned version.
+
+    `guide` is what an error event carries: an anchor in the tagging
+    guide, or "<file>.md#anchor" for another document.
+    """
+    docs = f"{ENGINE_REPO}/blob/v{ENGINE_VERSION}/docs"
+    if ".md" in guide:
+        return f"{docs}/{guide}"
+    return f"{docs}/tagging-guide.md#{guide}"
+
+
+def run(args, feedback, on_event):
+    """Run an engine command with --json, passing each event to on_event.
+
+    Returns the engine's exit code. Raises EngineCanceled if the user
+    cancels; the engine is stopped straight away, even mid-download.
+    """
+    cmd = [str(engine_exe()), *[str(a) for a in args]]
+    _log(f"\n[{datetime.now():%Y-%m-%d %H:%M:%S}] $ {' '.join(cmd)}")
+    with open(log_path(), "a", encoding="utf-8") as log:
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=log,
+                stdin=subprocess.DEVNULL,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=_clean_env(),
+                creationflags=_NO_WINDOW,
+            )
+        except OSError as err:
+            raise EngineError(
+                f"Could not start the engine: {err}. Details: {log_path()}"
+            )
+        # The engine can be silent for a long time (downloads), so its
+        # output is read on a separate thread and this loop stays free to
+        # notice the cancel button.
+        lines = queue.Queue()
+
+        def read():
+            for line in proc.stdout:
+                lines.put(line)
+            lines.put(None)
+
+        threading.Thread(target=read, daemon=True).start()
+        while True:
+            try:
+                line = lines.get(timeout=0.2)
+            except queue.Empty:
+                line = ""
+            if feedback is not None and feedback.isCanceled():
+                proc.kill()
+                proc.wait()
+                proc.stdout.close()
+                log.write("cancelled by the user\n")
+                raise EngineCanceled()
+            if line is None:
+                break
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except ValueError:
+                log.write(line)
+                continue
+            on_event(event)
+        proc.stdout.close()
+        return proc.wait()

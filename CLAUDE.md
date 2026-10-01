@@ -17,7 +17,7 @@ This repo is only the QGIS front end.
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v0.4.0`) in one constant. The
+- **Pin the engine version** (currently `v0.5.0`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -52,7 +52,7 @@ This repo is only the QGIS front end.
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v0.4.0.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v0.5.0.zip"`
   (with `uv venv --python 3.12` - uv downloads its own Python, so QGIS's
   Python version doesn't matter). Don't use the `git+https://` form: it
   needs git installed, which most Windows users don't have.
@@ -90,7 +90,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v0.4.0)
+## Engine contract (v0.5.0)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
@@ -126,8 +126,12 @@ JSON events on stdout (stderr is human-readable log text):
   (feature `null` = not about one feature).
 
 Exit codes: 0 ok, 1 unexpected, 2 bad usage (a plugin bug), 3 unusable
-input, 4 OSM download failed, 5 structural check failed (engine bug or
-a custom line connecting to nothing).
+input, 4 OSM download failed, 5 structural check failed (an engine bug).
+
+Since v0.5.0 a custom line that doesn't connect to the rest of the
+network is a `warning` event naming the `features`, not an error; the
+line is kept in the output. Only when no line reaches the network does
+the build fail (`NoIntersectionError`).
 
 GeoPackage `edges` columns for analysis: `car`, `bike`, `walk` (bool),
 `speed_kph`, `length_m`, `car_minutes`, `bike_minutes`, `walk_minutes`,
@@ -212,7 +216,7 @@ networkforge-qgis/
 
 ## Milestones (do in order; each ends with something that visibly works)
 1. **Skeleton** - plugin loads; "NetworkForge" appears in the Processing Toolbox.
-2. **Engine manager** - installs engine v0.4.0 into its own env and runs
+2. **Engine manager** - installs engine v0.5.0 into its own env and runs
    `networkforge info --json`. **Verify on Windows** (most users) and the
    developer's OS before going further; this decides the whole approach.
 3. **Build algorithm** - end to end on a real area: before/after layers

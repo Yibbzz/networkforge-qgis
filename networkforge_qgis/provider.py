@@ -5,6 +5,7 @@ from pathlib import Path
 from qgis.core import QgsProcessingProvider
 from qgis.PyQt.QtGui import QIcon
 
+from .algorithms.build_network import BuildNetworkAlgorithm
 from .algorithms.engine_info import EngineInfoAlgorithm
 
 ICON_PATH = Path(__file__).parent / "icons" / "networkforge.svg"
@@ -24,4 +25,5 @@ class NetworkForgeProvider(QgsProcessingProvider):
         return QIcon(str(ICON_PATH))
 
     def loadAlgorithms(self):
+        self.addAlgorithm(BuildNetworkAlgorithm())
         self.addAlgorithm(EngineInfoAlgorithm())

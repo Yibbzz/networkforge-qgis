@@ -12,10 +12,22 @@ will install into its own environment and run as a separate program.
 
 ## Status
 
-Early development. So far the plugin adds a "NetworkForge" group to the
-Processing Toolbox with one tool, "Engine information". It installs the
-engine on first use (once, needs an internet connection) and shows what
-the engine supports. It does not build networks yet.
+Early development. The plugin adds a "NetworkForge" group to the
+Processing Toolbox with two tools:
+
+- **Build scenario network** - choose an area and a layer of your own
+  lines, and say how they are travelled: a preset such as `primary_road`
+  for every line, or each feature's own attributes (`highway`,
+  `maxspeed`, ...). OpenStreetMap data is downloaded for the area, or
+  read from a local OSM file (required above 1,000 km2). You get a
+  **Before network** and an **After network** layer, with your lines
+  highlighted in the after layer, and `before.osm.pbf` and
+  `after.osm.pbf` in the output folder for routers.
+- **Engine information** - shows the installed engine's version and what
+  it supports, and can reinstall it.
+
+The engine is installed on first use (once, needs an internet
+connection).
 
 The engine goes into a `networkforge` folder inside your QGIS profile
 folder, next to an `engine.log` file that is useful when reporting
