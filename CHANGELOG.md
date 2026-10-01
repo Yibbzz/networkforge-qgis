@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.2 - 2026-10-01
+
+- The plugin's description now says exactly what is downloaded on first
+  use, where it is kept and how to remove it.
+
 ## 0.1.1 - 2026-10-01
 
 - The plugin now says it supports QGIS 4, so QGIS 4 lists it when
