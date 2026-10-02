@@ -5,6 +5,31 @@ the OpenStreetMap network, and getting a **before** and an **after**
 network back as QGIS layers (plus OSM PBF files for routers such as
 Valhalla).
 
+## Goal
+
+In ArcGIS, building a routable network from your own street data means
+the paid Network Analyst extension and a long setup: connectivity
+rules, costs, restrictions, travel modes, then a build. This project
+aims to give QGIS users the same ability for free, with far fewer
+steps, on top of OpenStreetMap:
+
+1. **Make the network in QGIS.** Draw or load your own lines and
+   describe them with ordinary attributes. NetworkForge joins them into
+   the OpenStreetMap street network and writes the result as an OSM PBF
+   file.
+2. **Analyse it with Valhalla.** Load that PBF into the
+   [QGIS Network Analyst plugin](https://github.com/routing-earth/network-analyst-qgis-plugin),
+   which builds a Valhalla routing graph from it on your own computer:
+   routes, isochrones, travel time matrices and more, with no server to
+   set up.
+3. **Follow documentation that is easier than Esri's.** Short tutorials
+   that start from a real planning question and work in the QGIS,
+   OpenStreetMap and Valhalla world.
+
+Step 1 works today. Step 2 is the next thing to prove and document; see
+the [roadmap](docs/roadmap.md) for where things stand and what comes
+next.
+
 ## What it does
 
 You draw a proposal as a line layer, here an invented footbridge across

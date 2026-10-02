@@ -9,6 +9,21 @@ All network logic lives in the separate engine,
 **NetworkForge** (https://github.com/Yibbzz/networkforge, GPL-3.0).
 This repo is only the QGIS front end.
 
+## Project goal (decided 2026-10-02)
+
+Replicate, in QGIS and for free, what ArcGIS Network Analyst's "Create
+a network dataset" gives Esri users: build a routable network from your
+own data, then analyse it. Here that is two tools: NetworkForge makes
+the network and writes OSM PBF files; routing.earth's **QGIS Network
+Analyst** plugin (Valhalla, run locally through `pyvalhalla`) builds a
+graph from the PBF and does the routing. The third aim is documentation
+that is better than Esri's. `docs/roadmap.md` has the plan and the
+ordered next steps; keep it up to date.
+
+So: don't add routing tools or a hosted web app here (the Network
+Analyst plugin covers that), and treat "the PBF works in Valhalla" as
+the output that matters most.
+
 ## Hard rules
 
 - **No network logic here.** Tag rules, snapping, OSM download, export:
