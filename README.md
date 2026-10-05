@@ -1,5 +1,8 @@
 # NetworkForge QGIS plugin
 
+[![tests](https://github.com/Yibbzz/networkforge-qgis/actions/workflows/tests.yml/badge.svg)](https://github.com/Yibbzz/networkforge-qgis/actions/workflows/tests.yml)
+[![coverage](https://codecov.io/gh/Yibbzz/networkforge-qgis/graph/badge.svg)](https://codecov.io/gh/Yibbzz/networkforge-qgis)
+
 A QGIS plugin for adding your own proposed roads, cycleways and paths to
 the OpenStreetMap network, and getting a **before** and an **after**
 network back as QGIS layers (plus OSM PBF files for routers such as
@@ -167,6 +170,8 @@ uv venv --python /usr/bin/python3 --system-site-packages .venv
 uv pip install --python .venv/bin/python -r requirements-dev.txt
 QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest
 ```
+
+Add `--cov` to see how much of the plugin's code the tests run.
 
 Most tests use a stand-in for the engine (`tests/fake_engine.py`) that
 plays back prepared replies, so they run in seconds. The end-to-end

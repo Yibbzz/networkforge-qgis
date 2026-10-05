@@ -1,0 +1,11 @@
+[run]
+# Paths from the top of the repository, so Codecov can match the files.
+source = .
+omit =
+    tests/*
+    .venv/*
+relative_files = true
+branch = true
+
+[report]
+show_missing = true
