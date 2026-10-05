@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+## 0.2.0 - 2026-10-05
+
+- The plugin now uses NetworkForge engine v0.10.0 (was v0.5.0). The
+  first tool you run replaces the installed engine, which needs an
+  internet connection and takes a few minutes, once.
+- New tool, "Build standalone network": turns a line layer of your own
+  into a routable network without OpenStreetMap. No area, no download
+  and no before network; you choose whether lines join wherever they
+  cross or only where they share a vertex. Gives a Network layer and
+  `network.osm.pbf`.
+- "Build scenario network" can change or remove existing streets: a
+  feature with an OpenStreetMap way id (`osm_id` or `osmid`) changes
+  that street, and `remove` = `yes` takes it out. Changed streets are
+  drawn in orange in the After network, and the log says how many
+  streets are new, changed and removed.
+- From the engine: the PBF files now hold OpenStreetMap as it is (way
+  ids, every tag, turn restrictions, ferries), so routes on the before
+  file match routes on the OpenStreetMap data; every piece of the
+  network is kept, not only the largest; lengths are right for layers
+  in Web Mercator; the `pedestrian_street` preset allows cycling
+  explicitly. See the engine's
+  [changelog](https://github.com/Yibbzz/networkforge/blob/v0.10.0/CHANGELOG.md).
+
 ## 0.1.4 - 2026-10-01
 
 - Fixed the engine install failing with "No module named pip" on the

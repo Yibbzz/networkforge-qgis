@@ -5,6 +5,7 @@ to a file the engine can read, running the engine, and showing its
 warnings and errors - including selecting the features they are about.
 """
 
+import os
 import re
 
 from qgis.core import (
@@ -13,17 +14,20 @@ from qgis.core import (
     QgsFeatureSink,
     QgsFields,
     QgsProcessingAlgorithm,
+    QgsProcessingContext,
     QgsProcessingException,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterEnum,
     QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterNumber,
     QgsProcessingParameterString,
     QgsProcessingUtils,
     QgsProject,
+    QgsVectorLayer,
 )
 from qgis.PyQt.QtCore import QObject, pyqtSignal
 
-from .. import compat, engine
+from .. import compat, engine, styling
 
 # Added to the exported features so the engine's messages can name QGIS
 # feature ids, whatever ids the exported file ends up with.
@@ -107,14 +111,15 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
     EXTRA_TAGS = "EXTRA_TAGS"
     OVERWRITE = "OVERWRITE"
     NETWORK_TYPE = "NETWORK_TYPE"
+    SNAP_TOLERANCE = "SNAP_TOLERANCE"
 
-    def add_custom_parameters(self, info):
+    def add_custom_parameters(self, info, label="Custom network layer"):
         """The layer and how its lines are travelled."""
         self._presets = list(info["presets"])
         self._network_types = list(info["network_types"])
         self.addParameter(
             QgsProcessingParameterFeatureSource(
-                self.CUSTOM, "Custom network layer", [compat.SOURCE_VECTOR_LINE]
+                self.CUSTOM, label, [compat.SOURCE_VECTOR_LINE]
             )
         )
         preset_labels = [FEATURE_ATTRIBUTES] + [
@@ -143,15 +148,23 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
             )
         )
 
-    def add_advanced_parameters(self, extra=()):
-        """Rarely changed settings, tucked under "Advanced parameters"."""
-        advanced = [
-            QgsProcessingParameterEnum(
-                self.NETWORK_TYPE,
-                "OpenStreetMap network to use",
-                self._network_types,
-                defaultValue=self._network_types.index("all"),
-            ),
+    def add_advanced_parameters(self, extra=(), network_type=True):
+        """Rarely changed settings, tucked under "Advanced parameters".
+
+        `network_type` is left out by a tool that uses no OpenStreetMap
+        network.
+        """
+        advanced = []
+        if network_type:
+            advanced.append(
+                QgsProcessingParameterEnum(
+                    self.NETWORK_TYPE,
+                    "OpenStreetMap network to use",
+                    self._network_types,
+                    defaultValue=self._network_types.index("all"),
+                )
+            )
+        advanced += [
             QgsProcessingParameterString(
                 self.EXTRA_TAGS,
                 "Other tags for all lines, e.g. lanes=2; bicycle=no",
@@ -162,6 +175,16 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
         for parameter in advanced:
             parameter.setFlags(parameter.flags() | compat.FLAG_ADVANCED)
             self.addParameter(parameter)
+
+    def snap_tolerance_parameter(self, label):
+        """How close lines must come to be joined, for add_advanced_parameters."""
+        return QgsProcessingParameterNumber(
+            self.SNAP_TOLERANCE,
+            label,
+            type=compat.NUMBER_DOUBLE,
+            defaultValue=1.0,
+            minValue=0.0,
+        )
 
     def checkParameterValues(self, parameters, context):
         try:
@@ -249,9 +272,56 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
             args += ["--tag", tag]
         if self.parameterAsBoolean(parameters, self.OVERWRITE, context):
             args.append("--overwrite-tags")
-        network_type = self.parameterAsEnum(parameters, self.NETWORK_TYPE, context)
-        args += ["--network-type", self._network_types[network_type]]
+        if self.parameterDefinition(self.NETWORK_TYPE) is not None:
+            network_type = self.parameterAsEnum(parameters, self.NETWORK_TYPE, context)
+            args += ["--network-type", self._network_types[network_type]]
         return args
+
+    @staticmethod
+    def remove_old(paths):
+        """Clear results of an earlier run in the same folder."""
+        for path in paths:
+            try:
+                if path.exists():
+                    os.remove(path)
+            except OSError:
+                raise QgsProcessingException(
+                    f"Could not replace {path}. It is probably still open in "
+                    "QGIS: remove the layers of the earlier run from the "
+                    "project, or choose another output folder."
+                )
+
+    @staticmethod
+    def count_edges(gpkg, flags=()):
+        """How many rows a network's edges layer has.
+
+        Returns (all rows, rows where each of `flags` is "yes"...), or
+        None if the file can't be read. The layer's rows are counted,
+        rather than using the numbers in the engine's "done" event, because
+        those count a two-way street once per direction.
+        """
+        layer = QgsVectorLayer(f"{gpkg}|layername=edges", "edges", "ogr")
+        if not layer.isValid():
+            return None
+        counts = [layer.featureCount()]
+        for flag in flags:
+            if layer.fields().indexOf(flag) < 0:  # left out when no edge has it
+                counts.append(0)
+                continue
+            request = QgsFeatureRequest().setFilterExpression(f"\"{flag}\" = 'yes'")
+            request.setNoAttributes()
+            counts.append(sum(1 for _ in layer.getFeatures(request)))
+        return tuple(counts)
+
+    @staticmethod
+    def load_edges(context, gpkg, name, output, style, credit=styling.OSM_CREDIT):
+        """Ask QGIS to add a network's edges to the project when the tool ends."""
+        source = f"{gpkg}|layername=edges"
+        details = QgsProcessingContext.LayerDetails(name, context.project(), output)
+        details.forceName = True
+        details.setPostProcessor(styling.LayerStyler.create(output, style, credit))
+        context.addLayerToLoadOnCompletion(source, details)
+        return source
 
     def run_engine(self, args, feedback):
         """Run an engine command, showing its progress and warnings.

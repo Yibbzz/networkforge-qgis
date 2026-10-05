@@ -8,6 +8,7 @@ from qgis.PyQt.QtGui import QIcon
 from .algorithms.build_network import BuildNetworkAlgorithm
 from .algorithms.check_layer import CheckLayerAlgorithm
 from .algorithms.engine_info import EngineInfoAlgorithm
+from .algorithms.standalone_network import StandaloneNetworkAlgorithm
 
 ICON_PATH = Path(__file__).parent / "icons" / "networkforge.svg"
 
@@ -20,7 +21,7 @@ class NetworkForgeProvider(QgsProcessingProvider):
         return "NetworkForge"
 
     def longName(self):
-        return "NetworkForge (scenario networks from OpenStreetMap)"
+        return "NetworkForge (street networks from OpenStreetMap and your own lines)"
 
     def icon(self):
         return QIcon(str(ICON_PATH))
@@ -28,4 +29,5 @@ class NetworkForgeProvider(QgsProcessingProvider):
     def loadAlgorithms(self):
         self.addAlgorithm(CheckLayerAlgorithm())
         self.addAlgorithm(BuildNetworkAlgorithm())
+        self.addAlgorithm(StandaloneNetworkAlgorithm())
         self.addAlgorithm(EngineInfoAlgorithm())

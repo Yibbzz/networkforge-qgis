@@ -1,4 +1,4 @@
-"""How the before and after layers look when they are loaded.
+"""How the network layers look when they are loaded.
 
 Applied on the main thread once a tool has finished, through QGIS's
 "post-processor" hook for layers a Processing tool loads.
@@ -34,6 +34,7 @@ _GROUPS = (
 )
 _OTHER_LINE = {"color": "#c3cace", "width": "0.25"}
 _CUSTOM_LINE = {"color": "#e6007e", "width": "1.4", "capstyle": "round"}
+_CHANGED_LINE = {"color": "#f28e2b", "width": "1.4", "capstyle": "round"}
 
 
 def _network_rules(root):
@@ -48,45 +49,57 @@ def _network_rules(root):
 
 
 def style_before(layer):
-    """The network coloured by kind of street."""
+    """The network coloured by kind of street.
+
+    Also how a standalone network is drawn: all of its lines are the
+    user's own, so there is nothing to make stand out.
+    """
     root = QgsRuleBasedRenderer.Rule(None)
     _network_rules(root)
     layer.setRenderer(QgsRuleBasedRenderer(root))
 
 
 def style_after(layer):
-    """As the before network, with the custom edges bold on top."""
-    custom = QgsLineSymbol.createSimple(_CUSTOM_LINE)
-    custom.symbolLayer(0).setRenderingPass(1)  # drawn after everything else
+    """As the before network, with the custom and changed edges bold on top."""
     root = QgsRuleBasedRenderer.Rule(None)
-    root.appendChild(
-        QgsRuleBasedRenderer.Rule(custom, 0, 0, "\"custom\" = 'yes'", "Custom")
-    )
+    # The engine leaves a column out when no edge has a value for it
+    # (a build of changes only has no custom edges, for example).
+    for field, line, label in (("custom", _CUSTOM_LINE, "Custom"),
+                               ("modified", _CHANGED_LINE, "Changed")):
+        if layer.fields().indexOf(field) < 0:
+            continue
+        symbol = QgsLineSymbol.createSimple(line)
+        symbol.symbolLayer(0).setRenderingPass(1)  # drawn after everything else
+        root.appendChild(
+            QgsRuleBasedRenderer.Rule(symbol, 0, 0, f"\"{field}\" = 'yes'", label)
+        )
     _network_rules(root)
     layer.setRenderer(QgsRuleBasedRenderer(root))
 
 
 class LayerStyler(QgsProcessingLayerPostProcessorInterface):
-    """Styles a loaded layer and credits OpenStreetMap in its metadata."""
+    """Styles a loaded layer and, given a credit, puts it in its metadata."""
 
     # QGIS doesn't keep the Python object alive by itself, so the latest
     # styler for each role is kept here until it has been used.
     _alive = {}
 
-    def __init__(self, style):
+    def __init__(self, style, credit=OSM_CREDIT):
         super().__init__()
         self._style = style
+        self._credit = credit
 
     @classmethod
-    def create(cls, role, style):
-        cls._alive[role] = cls(style)
+    def create(cls, role, style, credit=OSM_CREDIT):
+        cls._alive[role] = cls(style, credit)
         return cls._alive[role]
 
     def postProcessLayer(self, layer, context, feedback):
         if not layer.isValid():
             return
         self._style(layer)
-        metadata = layer.metadata()
-        metadata.setRights([OSM_CREDIT])
-        layer.setMetadata(metadata)
+        if self._credit:
+            metadata = layer.metadata()
+            metadata.setRights([self._credit])
+            layer.setMetadata(metadata)
         layer.triggerRepaint()

@@ -3,7 +3,8 @@
 A QGIS plugin for adding your own proposed roads, cycleways and paths to
 the OpenStreetMap network, and getting a **before** and an **after**
 network back as QGIS layers (plus OSM PBF files for routers such as
-Valhalla).
+Valhalla). It can also change or remove existing streets, and build a
+network from your own lines alone, without OpenStreetMap.
 
 ## Goal
 
@@ -60,7 +61,7 @@ will install into its own environment and run as a separate program.
 ## Status
 
 Early development. The plugin adds a "NetworkForge" group to the
-Processing Toolbox with three tools:
+Processing Toolbox with four tools:
 
 - **Check custom network layer** - checks your lines and attributes in
   seconds, without downloading anything. Problems are listed with a link
@@ -73,7 +74,17 @@ Processing Toolbox with three tools:
   network** layer coloured by kind of street, with your lines
   highlighted in the after layer, and `before.osm.pbf` and
   `after.osm.pbf` in the output folder for routers. Features named in a
-  warning or error are selected in your layer.
+  warning or error are selected in your layer. A feature can also
+  **change or remove an existing street** instead of adding a line (see
+  below).
+- **Build standalone network** - turns a line layer of your own (council
+  centrelines, a survey, the streets of a planned neighbourhood) into a
+  routable network without OpenStreetMap: no area to choose, nothing
+  downloaded, no before network. You choose where lines join: wherever
+  they cross, or only where they share a vertex (for data that already
+  has a vertex at every junction). You get a **Network** layer and
+  `network.osm.pbf`. If the lines don't form one connected network, a
+  warning says so and the lines outside the largest piece are selected.
 - **Engine information** - shows the installed engine's version and what
   it supports, and can reinstall it.
 
@@ -110,6 +121,24 @@ text field called `highway` (and optionally `maxspeed`, `oneway`, ...)
 to describe each line, or leave the fields out and pick a preset when
 you build. Save it as a GeoPackage, not a Shapefile, which shortens
 field names.
+
+### Changing or removing an existing street
+
+In **Build scenario network**, a feature that carries an OpenStreetMap
+way id changes that street instead of adding a line:
+
+1. Build once, then copy the street from the **Before network** layer
+   into your custom layer. Its way id is in the `osmid` field; your
+   layer needs a field called `osmid` or `osm_id` to receive it.
+2. Edit the copy's attributes: `oneway` = `yes` to make it one-way,
+   `access` = `no` to close it, a new `maxspeed` or `highway`. Or set a
+   field called `remove` to `yes` to take the street out altogether.
+3. Build again. Changed streets are drawn in orange in the After
+   network; removed streets are in the Before network only.
+
+The engine's
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.10.0/docs/tagging-guide.md#changing-existing-streets)
+has the details.
 
 ## Requirements
 
@@ -160,11 +189,18 @@ To build a zip by hand: `uvx qgis-plugin-ci package 0.1.0`.
 
 ## Limitations
 
-No public transport, no traffic simulation and no turn restrictions yet.
+No public transport and no traffic simulation. Turn restrictions that
+are in OpenStreetMap are kept in the PBF files and routers obey them,
+but you can't add your own, and the QGIS layers know nothing of them.
+An existing street can be changed or removed, not redrawn: to move one,
+remove it and draw the new line. A standalone network has no turn
+restrictions, traffic signals or gates, because a line layer can't
+carry them.
 
 ## Credits and licence
 
 Map data © OpenStreetMap contributors, available under the
-[Open Database License](https://www.openstreetmap.org/copyright).
+[Open Database License](https://www.openstreetmap.org/copyright). A
+standalone network contains only your own data.
 
 GPL-3.0, see [LICENSE](LICENSE).

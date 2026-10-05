@@ -4,23 +4,20 @@ Hands the chosen extent and custom lines to the engine's `build` command
 and loads what it writes. All the network work happens in the engine.
 """
 
-import os
 from pathlib import Path
 
 from qgis.core import (
     QgsCoordinateReferenceSystem,
     QgsDistanceArea,
-    QgsProcessingContext,
     QgsProcessingException,
     QgsProcessingOutputFile,
     QgsProcessingOutputVectorLayer,
     QgsProcessingParameterExtent,
     QgsProcessingParameterFile,
     QgsProcessingParameterFolderDestination,
-    QgsProcessingParameterNumber,
 )
 
-from .. import compat, engine, styling
+from .. import engine, styling
 from .common import CustomNetworkAlgorithm
 
 WGS84 = "EPSG:4326"
@@ -29,7 +26,6 @@ WGS84 = "EPSG:4326"
 class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
     EXTENT = "EXTENT"
     OSM_FILE = "OSM_FILE"
-    SNAP_TOLERANCE = "SNAP_TOLERANCE"
     OUTPUT_FOLDER = "OUTPUT_FOLDER"
     BEFORE = "BEFORE"
     AFTER = "AFTER"
@@ -43,25 +39,39 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
         return "Build scenario network"
 
     def shortHelpString(self):
-        limit = engine.bundled_info()["max_overpass_area_km2"]
+        info = engine.bundled_info()
+        limit = info["max_overpass_area_km2"]
+        ids = " or ".join(info["edit_id_fields"])
         return (
             "Adds your own proposed roads, cycleways and paths to the "
             "OpenStreetMap network for an area, and gives you two networks "
             "back: <b>before</b> (OpenStreetMap as it is) and <b>after</b> "
-            "(with your lines joined in).\n\n"
+            "(with your lines joined in). To build a network from your own "
+            "lines alone, without OpenStreetMap, use \"Build standalone "
+            "network\".\n\n"
             "<b>Travel type</b>: pick a preset to treat every line the same "
             "way (for example primary_road), or \"Use each feature's own "
             "attributes\" if your layer has fields such as highway and "
             "maxspeed. A preset only fills in what a feature leaves empty, "
             "unless you tick the overwrite box.\n\n"
+            "<b>Changing existing streets</b>: a feature with an OpenStreetMap "
+            f"way id in a field called {ids} changes that street instead of "
+            "adding a line, for example to make it one-way or close it. Copy "
+            "the street from the Before network layer (its id is in osmid) "
+            "and edit the copy's attributes. Set a field called "
+            f"{info['remove_field']} to yes to take the street out. "
+            f"<a href=\"{engine.guide_url('changing-existing-streets')}\">"
+            "Guide</a>.\n\n"
             "<b>OpenStreetMap data</b>: downloaded for the extent unless you "
             f"give a local OSM file, which is required above {limit:,} km2.\n\n"
             "<b>Results</b>: the before and after layers are added to the "
             "project with your lines highlighted, and the output folder "
             "also gets before.osm.pbf and after.osm.pbf for routers such as "
-            "Valhalla.\n\n"
-            "Not included: public transport, traffic simulation and turn "
-            "restrictions.\n\n"
+            "Valhalla. Changed streets are drawn in orange; removed streets "
+            "are only in the before network.\n\n"
+            "Not included: public transport and traffic simulation. Turn "
+            "restrictions come from OpenStreetMap and are kept in the PBF "
+            "files; you can't add your own.\n\n"
             "Map data © OpenStreetMap contributors (ODbL)."
         )
 
@@ -87,12 +97,8 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             QgsProcessingParameterFolderDestination(self.OUTPUT_FOLDER, "Output folder")
         )
         self.add_advanced_parameters([
-            QgsProcessingParameterNumber(
-                self.SNAP_TOLERANCE,
-                "How close a line must come to join the network (metres)",
-                type=compat.NUMBER_DOUBLE,
-                defaultValue=1.0,
-                minValue=0.0,
+            self.snap_tolerance_parameter(
+                "How close a line must come to join the network (metres)"
             ),
         ])
 
@@ -118,7 +124,7 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             "--baseline-out": folder / "before.osm.pbf",
             "--out": folder / "after.osm.pbf",
         }
-        self._remove_old(outputs.values())
+        self.remove_old(outputs.values())
 
         args = ["build", "--json", f"--bbox={bbox}",
                 *self.custom_args(parameters, context, custom_file)]
@@ -129,16 +135,27 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
         for flag, path in outputs.items():
             args += [flag, path]
 
-        if self.run_engine(args, feedback) is None:
+        done = self.run_engine(args, feedback)
+        if done is None:
             return {}
 
+        counts = self.count_edges(outputs["--gpkg"], ("custom", "modified"))
+        if counts is not None:
+            feedback.pushInfo(
+                "After network: {:,} street segments, of which {:,} new and "
+                "{:,} changed.".format(*counts)
+            )
+        if done.get("removed_edges"):
+            feedback.pushInfo(
+                "Streets were removed: they are in the Before network only."
+            )
         feedback.pushInfo(f"Done. Files are in {folder}")
         feedback.pushInfo(f"Map data {styling.OSM_CREDIT}")
 
-        before = self._load(context, outputs["--baseline-gpkg"], "Before network",
-                            self.BEFORE, styling.style_before)
-        after = self._load(context, outputs["--gpkg"], "After network",
-                           self.AFTER, styling.style_after)
+        before = self.load_edges(context, outputs["--baseline-gpkg"], "Before network",
+                                 self.BEFORE, styling.style_before)
+        after = self.load_edges(context, outputs["--gpkg"], "After network",
+                                self.AFTER, styling.style_after)
         return {
             self.BEFORE: before,
             self.AFTER: after,
@@ -173,27 +190,3 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             for value in (extent.xMinimum(), extent.yMinimum(),
                           extent.xMaximum(), extent.yMaximum())
         )
-
-    @staticmethod
-    def _remove_old(paths):
-        """Clear results of an earlier run in the same folder."""
-        for path in paths:
-            try:
-                if path.exists():
-                    os.remove(path)
-            except OSError:
-                raise QgsProcessingException(
-                    f"Could not replace {path}. It is probably still open in "
-                    "QGIS: remove the earlier Before and After layers from "
-                    "the project, or choose another output folder."
-                )
-
-    @staticmethod
-    def _load(context, gpkg, name, output, style):
-        """Ask QGIS to add a network's edges to the project when the tool ends."""
-        source = f"{gpkg}|layername=edges"
-        details = QgsProcessingContext.LayerDetails(name, context.project(), output)
-        details.forceName = True
-        details.setPostProcessor(styling.LayerStyler.create(output, style))
-        context.addLayerToLoadOnCompletion(source, details)
-        return source

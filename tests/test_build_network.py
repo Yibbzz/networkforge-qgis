@@ -4,6 +4,7 @@ import pytest
 from qgis import processing
 from qgis.core import (
     QgsFeature,
+    QgsField,
     QgsGeometry,
     QgsPointXY,
     QgsProcessingException,
@@ -18,7 +19,8 @@ from networkforge_qgis.algorithms.common import ID_FIELD, parse_tags
 ALGORITHM = "networkforge:build_network"
 # West of Greenwich, so the western longitude is negative.
 EXTENT = "-3.70,-3.60,40.40,40.45 [EPSG:4326]"
-DONE = {"event": "done", "outputs": {}, "nodes": 1, "edges": 2, "custom_edges": 1}
+DONE = {"event": "done", "outputs": {}, "nodes": 1, "edges": 2, "custom_edges": 1,
+        "modified_edges": 0, "removed_edges": 0}
 
 
 @pytest.fixture
@@ -196,6 +198,32 @@ def test_progress_and_warnings_reach_the_user(build, fake_engine, feedback):
     assert feedback.progress == [0, 50, 100]
     assert feedback.progress_texts[:2] == ["Checking", "Snapping"]
     assert feedback.warnings[0] == "1 custom feature(s) don't connect"
+
+
+def test_removed_streets_are_mentioned(build, fake_engine, feedback):
+    note = "Streets were removed: they are in the Before network only."
+    build()
+    assert note not in feedback.infos
+
+    fake_engine.play([dict(DONE, removed_edges=2)])
+    build()
+    assert note in feedback.infos
+
+
+def test_fields_that_change_existing_streets_are_exported(build, fake_engine, lines):
+    # The engine reads these from the file: osm_id / osmid name the street
+    # a feature changes, and remove=yes takes it out.
+    info = engine.bundled_info()
+    wanted = [*info["edit_id_fields"], info["remove_field"]]
+    lines.dataProvider().addAttributes(
+        [QgsField(name, lines.fields().at(0).type()) for name in wanted])
+    lines.updateFields()
+
+    build()
+
+    names = [field.name() for field in exported(fake_engine).fields()]
+    for name in wanted:
+        assert name in names
 
 
 def test_engine_error_lists_the_features_and_links_the_guide(build, fake_engine):

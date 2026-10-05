@@ -3,7 +3,9 @@
 A QGIS plugin that lets GIS users integrate their own proposed roads,
 cycleways and paths into the OpenStreetMap network correctly, and get a
 **before** and **after** network back as QGIS layers (plus OSM PBF files
-for routers such as Valhalla). This is a proof of concept.
+for routers such as Valhalla). It can also change or remove existing
+streets, and build a standalone network from the user's lines alone
+(no OpenStreetMap). This is a proof of concept.
 
 All network logic lives in the separate engine,
 **NetworkForge** (https://github.com/Yibbzz/networkforge, GPL-3.0).
@@ -32,7 +34,7 @@ the output that matters most.
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v0.5.0`) in one constant. The
+- **Pin the engine version** (currently `v0.10.0`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -69,7 +71,7 @@ the output that matters most.
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v0.5.0.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v0.10.0.zip"`
   (with `uv venv --python 3.12 --python-preference only-managed` - uv
   downloads its own Python, so QGIS's Python version doesn't matter.
   Without `only-managed` uv reuses a matching Python it finds; the
@@ -109,7 +111,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v0.5.0)
+## Engine contract (v0.10.0)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
@@ -118,9 +120,12 @@ Commands:
 - `networkforge info --json` - one event with: `version`, `presets`
   (name -> `{tags, modes}`), `network_types`, `modes`,
   `max_overpass_area_km2`, `osm_formats`, `gpkg_edge_columns`,
-  `tag_keys`, `tag_values` (valid values for `highway`, `oneway`,
-  `access`, `vehicle`, `motor_vehicle`, `motorcar`, `foot`, `bicycle`),
-  `tag_patterns` (regexes for `maxspeed`, `lanes`, `layer`).
+  `edit_id_fields` (`osm_id`, `osmid`), `remove_field` (`remove`),
+  `standalone` (true), `join_at` (`crossings`, `vertices`),
+  `tag_keys`, `tag_values` (valid values for `highway`, `oneway` and
+  the access keys: `access`, `foot`, `bicycle`, `bus`, `hgv`, ...),
+  `tag_patterns` (regexes for `maxspeed`, `lanes`, `layer` and the
+  limits `maxheight`, `maxweight`, ...).
   **Build dropdowns and value maps from this, don't hard-code them.**
 - `networkforge check --custom F [--custom-layer L] [--id-field N]
   [--extent F | --bbox W,S,E,N] [--preset P] [--tag K=V ...]
@@ -129,12 +134,20 @@ Commands:
   `--snap-tolerance M` (default 1), `--no-strict`, and outputs
   `--out F` (after, OSM/PBF), `--baseline-out F` (before, OSM/PBF),
   `--gpkg F` (after, GeoPackage), `--baseline-gpkg F` (before, GeoPackage).
+- `networkforge build --no-osm` - a standalone network from the custom
+  lines alone. Takes `--join-at crossings|vertices` (default
+  `crossings`; only valid with `--no-osm`), `--snap-tolerance`, `--out`
+  and `--gpkg`. **Must not** be given `--extent` / `--bbox`,
+  `--osm-source`, `--baseline-out` or `--baseline-gpkg` (exit code 2).
+  The plugin doesn't pass `--network-type` either: there is no OSM
+  network to choose.
 
 JSON events on stdout (stderr is human-readable log text):
 ```json
 {"event": "progress", "step": 2, "total": 13, "message": "Downloading OSM network"}
 {"event": "warning", "message": "...", "features": [17]}          // or "fields": ["length"]
-{"event": "done", "outputs": {"gpkg": "...", "baseline_gpkg": "..."}, "nodes": 1, "edges": 2, "custom_edges": 3}
+{"event": "done", "outputs": {"gpkg": "...", "baseline_gpkg": "..."}, "nodes": 1, "edges": 2,
+ "custom_edges": 3, "modified_edges": 0, "removed_edges": 0}   // check: "features", "modes", "edits"
 {"event": "error", "type": "InvalidTagsError", "message": "...", "guide": "fixing-tag-errors",
  "issues": [{"feature": 17, "message": "maxspeed='fast' is not a valid OSM speed"}]}
 ```
@@ -151,6 +164,34 @@ Since v0.5.0 a custom line that doesn't connect to the rest of the
 network is a `warning` event naming the `features`, not an error; the
 line is kept in the output. Only when no line reaches the network does
 the build fail (`NoIntersectionError`).
+
+Changing existing streets (since v0.7.0 / v0.8.0): a custom feature with
+an OSM way id in `osm_id` or `osmid` changes that street instead of
+adding a line (only attributes that differ from OSM, only on the stretch
+it lies along); with `remove` = `yes` the stretch is taken out. The
+plugin only has to export those fields, which it does. Changed edges
+have `modified` = `yes` in the after GeoPackage. Errors use the guide
+anchor `changing-existing-streets`.
+
+Standalone networks (since v0.10.0): a `warning` event names the
+`features` outside the largest connected piece. Guide anchor:
+`a-network-of-your-own-lines`.
+
+The engine leaves a GeoPackage column out when no edge has a value:
+`custom` is missing from the before network and from a build of changes
+only, `modified` from a build with no changes. Check a field exists
+before styling by it. `osmid` is the OSM way id (empty on custom edges).
+`oneway` is a boolean in some outputs and the text `True`/`False` in
+others (new lines and changes in one build), so read `car_direction`
+instead.
+
+The `done` event's `edges`, `custom_edges`, `modified_edges` and
+`removed_edges` count a two-way OSM street once per direction, so they
+don't match the GeoPackage's rows (one per street). The plugin counts
+the rows of the output layer for its log (`count_edges` in `common.py`).
+
+Since v0.9.0 every connected piece of the network is kept. The PBF holds
+OpenStreetMap as it is: way ids, all tags, turn restrictions, ferries.
 
 GeoPackage `edges` columns for analysis: `car`, `bike`, `walk` (bool),
 `speed_kph`, `length_m`, `car_minutes`, `bike_minutes`, `walk_minutes`,
@@ -172,6 +213,7 @@ networkforge-qgis/
 │   ├── algorithms/
 │   │   ├── common.py           # base class: export layer, run engine, select features
 │   │   ├── build_network.py    # "Build scenario network"
+│   │   ├── standalone_network.py # "Build standalone network" (no OSM)
 │   │   ├── check_layer.py      # "Check custom network layer"
 │   │   └── engine_info.py      # "Engine information" (version, reinstall)
 │   ├── styling.py              # renderers for the result layers (built in code, not .qml)
@@ -195,10 +237,16 @@ networkforge-qgis/
    and no OSM file is given (the engine will refuse it).
 2. **Check custom network layer** - runs `check --json`; lists issues,
    selects the offending features, links each to the guide.
-3. No tool for creating a custom layer: the user decided against it
+3. **Build standalone network** - runs `build --no-osm`; inputs: the
+   network layer, travel type (as above), where lines join (enum from
+   `info`'s `join_at`), output folder, snap distance. No extent, OSM
+   file or network type. Outputs: `network.gpkg` loaded as "Network"
+   and `network.osm.pbf`. No OSM credit: it holds no OSM data.
+4. No tool for creating a custom layer: the user decided against it
    (users make a line layer in QGIS themselves). Don't add one back.
-4. Styles: after-edges coloured by `highway`, custom edges bold/highlighted;
-   nodes hidden by default.
+5. Styles: after-edges coloured by `highway`, custom edges bold pink and
+   changed edges bold orange on top; the standalone network is coloured
+   by `highway` only (every edge is custom). Nodes hidden by default.
 
 ## Gotchas already learned (from the engine work)
 - `qgis_process` network algorithms need `--PROJECT_PATH=<an .qgs>` placed
@@ -211,7 +259,13 @@ networkforge-qgis/
 - `car` in the GeoPackage excludes service roads (OSMnx's drive rule).
 - OSM data needs credit: show "© OpenStreetMap contributors" (ODbL).
 - Engine limitations to state in the plugin docs: no public transport,
-  no traffic simulation, no turn restrictions yet.
+  no traffic simulation; turn restrictions come from OpenStreetMap only
+  (kept in the PBF, users can't add their own); existing streets can be
+  re-tagged or removed, not redrawn.
+- Upgrading the engine: change `ENGINE_VERSION` in `engine.py`, save the
+  new `networkforge info --json` as `engine_info.json` (indent 1), and
+  run the end-to-end tests (`pytest -m engine`), which install the pinned
+  tag from GitHub - so the tag must be pushed first.
 
 ## Development environment
 - Develop on the host with **QGIS LTR** (3.40+) installed, not in the
@@ -235,7 +289,7 @@ networkforge-qgis/
 
 ## Milestones (do in order; each ends with something that visibly works)
 1. **Skeleton** - plugin loads; "NetworkForge" appears in the Processing Toolbox.
-2. **Engine manager** - installs engine v0.5.0 into its own env and runs
+2. **Engine manager** - installs the pinned engine into its own env and runs
    `networkforge info --json`. **Verify on Windows** (most users) and the
    developer's OS before going further; this decides the whole approach.
 3. **Build algorithm** - end to end on a real area: before/after layers

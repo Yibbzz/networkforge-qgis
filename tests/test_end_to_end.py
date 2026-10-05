@@ -30,16 +30,15 @@ DIAGONAL = [(-3.7000, 40.4000), (-3.6964, 40.4027)]
 FAR_AWAY = [(-3.6952, 40.4035), (-3.6951, 40.4038)]
 
 
-def line_layer(*lines):
-    """A project layer of (highway, maxspeed, points) lines."""
-    layer = QgsVectorLayer(
-        "LineString?crs=EPSG:4326&field=highway:string&field=maxspeed:string", "plan", "memory"
-    )
+def line_layer(*lines, extra_fields=()):
+    """A project layer of (highway, maxspeed, points, *extra values) lines."""
+    fields = "".join(f"&field={name}:string" for name in ("highway", "maxspeed", *extra_fields))
+    layer = QgsVectorLayer(f"LineString?crs=EPSG:4326{fields}", "plan", "memory")
     features = []
-    for highway, maxspeed, points in lines:
+    for highway, maxspeed, points, *extra in lines:
         feature = QgsFeature(layer.fields())
         feature.setGeometry(QgsGeometry.fromPolylineXY([QgsPointXY(x, y) for x, y in points]))
-        feature.setAttributes([highway, maxspeed])
+        feature.setAttributes([highway, maxspeed, *extra])
         features.append(feature)
     layer.dataProvider().addFeatures(features)
     QgsProject.instance().addMapLayer(layer)
@@ -128,3 +127,97 @@ def test_check_passes_good_lines_and_explains_bad_ones(
         "CUSTOM": plan, "PRESET": presets.index("footpath") + 1,
     }, feedback=feedback)
     assert results["FEATURES"] == 2
+
+
+def test_build_changes_and_removes_existing_streets(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    # Row 0 (OSM way 1001) becomes one-way; row 1 (way 1002) is taken out.
+    row_0 = [(-3.7000, 40.4000), (-3.6964, 40.4000)]
+    row_1 = [(-3.7000, 40.4009), (-3.6964, 40.4009)]
+    plan = line_layer(
+        ("cycleway", None, DIAGONAL, None, None, None),
+        (None, None, row_0, "1001", "yes", None),
+        (None, None, row_1, "1002", None, "yes"),
+        extra_fields=("osm_id", "oneway", "remove"),
+    )
+
+    results = processing.run("networkforge:build_network", {
+        "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(GRID),
+        "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+
+    before = QgsVectorLayer(results["BEFORE"], "before", "ogr")
+    after = QgsVectorLayer(results["AFTER"], "after", "ogr")
+    changed = [f for f in after.getFeatures() if f["modified"] == "yes"]
+    assert changed
+    assert {f["osmid"] for f in changed} == {1001}
+    assert {f["car_direction"] for f in changed} == {"forward"}
+    assert {f["car_direction"] for f in before.getFeatures()} == {"both"}
+    assert 1002 in {f["osmid"] for f in before.getFeatures()}
+    assert 1002 not in {f["osmid"] for f in after.getFeatures()}
+    # Counted from the layer: the engine's own numbers count a two-way
+    # street once per direction.
+    assert (f"After network: {after.featureCount()} street segments, of which "
+            f"3 new and {len(changed)} changed.") in feedback.infos
+    assert "Streets were removed: they are in the Before network only." in feedback.infos
+
+
+# Two streets that cross mid-way without a shared vertex, and one apart.
+STREET = [(-3.7000, 40.4000), (-3.6960, 40.4000)]
+CROSSING = [(-3.6980, 40.3990), (-3.6980, 40.4010)]
+
+
+def test_standalone_network_joins_lines_where_they_cross(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    streets = line_layer(("residential", "30", STREET), ("residential", None, CROSSING))
+
+    results = processing.run("networkforge:standalone_network", {
+        "CUSTOM": streets, "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+
+    network = QgsVectorLayer(results["NETWORK"], "network", "ogr")
+    assert network.isValid()
+    assert network.featureCount() == 4  # each street cut in two at the crossing
+    assert "Network: 4 street segments." in feedback.infos
+    names = [field.name() for field in network.fields()]
+    for column in real_engine.bundled_info()["gpkg_edge_columns"]:
+        assert column in names
+    assert all(f["car"] and f["walk"] for f in network.getFeatures())
+    assert Path(results["NETWORK_OSM"]).stat().st_size > 0
+    assert not (tmp_path / "out" / "before.gpkg").exists()
+    assert not feedback.warnings
+    assert feedback.progress[-1] == 100
+
+
+def test_standalone_network_joining_at_vertices_leaves_crossing_lines_apart(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    streets = line_layer(("residential", None, STREET), ("residential", None, CROSSING))
+    join_at = real_engine.bundled_info()["join_at"]
+
+    results = processing.run("networkforge:standalone_network", {
+        "CUSTOM": streets, "JOIN_AT": join_at.index("vertices"),
+        "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+
+    assert QgsVectorLayer(results["NETWORK"], "network", "ogr").featureCount() == 2
+    assert any("separate pieces" in warning for warning in feedback.warnings)
+    assert len(streets.selectedFeatureIds()) == 1
+
+
+def test_standalone_network_needs_a_kind_of_street_for_every_line(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    streets = line_layer(("residential", None, STREET), (None, None, CROSSING))
+    with_highway, without = sorted(f.id() for f in streets.getFeatures())
+
+    with pytest.raises(QgsProcessingException, match=f"feature {without}: no highway tag"):
+        processing.run("networkforge:standalone_network", {
+            "CUSTOM": streets, "OUTPUT_FOLDER": str(tmp_path / "out"),
+        }, feedback=feedback)
+    assert streets.selectedFeatureIds() == [without]
+
+    presets = list(real_engine.bundled_info()["presets"])
+    results = processing.run("networkforge:standalone_network", {
+        "CUSTOM": streets, "PRESET": presets.index("residential_street") + 1,
+        "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+    assert QgsVectorLayer(results["NETWORK"], "network", "ogr").featureCount() == 4

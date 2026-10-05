@@ -75,6 +75,11 @@ class EngineInfoAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo("Presets: " + ", ".join(info["presets"]))
         feedback.pushInfo("Network types: " + ", ".join(info["network_types"]))
         feedback.pushInfo("Travel modes: " + ", ".join(info["modes"]))
+        if info.get("standalone"):
+            feedback.pushInfo(
+                "Standalone networks (without OpenStreetMap): lines join at "
+                + " or ".join(info.get("join_at", []))
+            )
         feedback.pushInfo(
             "Largest area downloadable from OpenStreetMap: "
             f"{info['max_overpass_area_km2']:,} km2 (use a local OSM file "

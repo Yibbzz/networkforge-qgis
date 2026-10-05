@@ -11,7 +11,7 @@ source world that is two tools working together:
 
 | Step | Tool | Result |
 |---|---|---|
-| Build the network | **NetworkForge** (this plugin and its engine) | `before.osm.pbf` and `after.osm.pbf`: OpenStreetMap, without and with your own lines |
+| Build the network | **NetworkForge** (this plugin and its engine) | `before.osm.pbf` and `after.osm.pbf`: OpenStreetMap, without and with your own lines and changes. Or `network.osm.pbf`: your own lines alone |
 | Analyse the network | **[QGIS Network Analyst](https://github.com/routing-earth/network-analyst-qgis-plugin)** by routing.earth, which runs Valhalla locally | routes, isochrones, matrices on either network |
 
 The third part of the goal is **documentation that is better than
@@ -39,7 +39,8 @@ already take care of:
 
 | Esri step | Here |
 |---|---|
-| Streets and walking paths as sources | OpenStreetMap has both; your lines are added by NetworkForge |
+| Streets and walking paths as sources | OpenStreetMap has both; your lines are added by NetworkForge. Or your own line layer alone, with "Build standalone network" |
+| Connectivity policy (End Point, Any Vertex) | "Lines join" in "Build standalone network": wherever they cross, or only where they share a vertex |
 | Vertical connectivity fields for overpasses (`F_ZLEV`, `T_ZLEV`) | streets join where they share a point; `bridge`, `tunnel` and `layer` keep crossings apart |
 | Costs: minutes, miles, turn delays | worked out by Valhalla from `highway` and `maxspeed` |
 | Restrictions for cars, buses, walking (`AR_AUTO`, ...) | `motor_vehicle`, `bus`, `foot`, or a preset |
@@ -52,9 +53,12 @@ already take care of:
 | Build Network | "build graph from PBF" in the Network Analyst plugin |
 | Explore Network | look at the Before and After layers in QGIS |
 
-The engine accepts every tag in the right-hand column. **Not yet
-checked:** that each of them reaches the PBF file and changes the
-routes Valhalla gives.
+The engine accepts every tag in the right-hand column, and since
+engine v0.6.0 its Valhalla tests check that each one reaches the PBF
+file and changes the routes Valhalla gives. The engine's
+[network-analyst.md](https://github.com/Yibbzz/networkforge/blob/v0.10.0/docs/network-analyst.md)
+lists each ArcGIS feature, the tag that replaces it and the test that
+proves it.
 
 ## Next steps
 
@@ -84,6 +88,9 @@ engine, not in this plugin.
 
 ### 2. Check the Esri examples, as automated tests in the engine
 
+**Done in engine v0.6.0** (`tests/valhalla`, GitHub job "PBF in
+Valhalla", with a pinned `pyvalhalla`). The plan was:
+
 Add a Valhalla job to the engine's GitHub tests (`pyvalhalla` installs
 with pip, no server or Docker needed): build a before and after PBF for
 each case below, build both graphs, and compare routes. That is where
@@ -93,13 +100,13 @@ change can't break the tests unannounced.
 
 One line of each kind, with Valhalla treating it correctly:
 
-- [ ] a one-way street (`oneway=yes`): routes only go one way
-- [ ] a path closed to cars (`highway=footway`): walking uses it,
+- [x] a one-way street (`oneway=yes`): routes only go one way
+- [x] a path closed to cars (`highway=footway`): walking uses it,
       driving does not
-- [ ] a low bridge (`maxheight`): a bus or truck goes around, a car
+- [x] a low bridge (`maxheight`): a bus or truck goes around, a car
       does not
-- [ ] an unpaved road (`surface`): avoided when asked
-- [ ] a bridge over an existing road (`bridge=yes`, `layer=1`): crosses
+- [x] an unpaved road (`surface`): avoided when asked
+- [x] a bridge over an existing road (`bridge=yes`, `layer=1`): crosses
       it without joining it
 
 ### 3. Add a short "Routing with Valhalla" section to the README
@@ -129,10 +136,14 @@ One line of each kind, with Valhalla treating it correctly:
 Changes for the engine, most useful first. None of these belong in this
 plugin (it has no network logic).
 
-- [ ] **Closing or changing existing streets**, not only adding lines:
-      many proposals remove a road or make it one-way. To check first:
-      what the engine can already do here.
-- [ ] **Turn restrictions**: not supported yet.
+- [x] **Closing or changing existing streets**, not only adding lines:
+      engine v0.7.0 (change) and v0.8.0 (remove). A feature with an
+      OpenStreetMap way id changes that street; `remove` = `yes` takes
+      it out. The plugin draws changed streets in orange.
+- [x] **A network from your own data alone**, as Esri's tutorial does:
+      engine v0.10.0, "Build standalone network" in this plugin.
+- [ ] **Turn restrictions**: those in OpenStreetMap are kept in the PBF
+      since engine v0.6.0. Adding your own is not supported yet.
 - [ ] **Public transport**: out of scope for now.
 
 ## Things not planned

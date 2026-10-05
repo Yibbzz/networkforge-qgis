@@ -15,7 +15,7 @@ from networkforge_qgis import engine
 from networkforge_qgis.algorithms.common import ID_FIELD
 
 ALGORITHM = "networkforge:check_layer"
-DONE = {"event": "done", "features": 2, "modes": {"walk, bike": 1, "nothing": 1}}
+DONE = {"event": "done", "features": 2, "modes": {"walk, bike": 1, "nothing": 1}, "edits": 0}
 
 
 @pytest.fixture

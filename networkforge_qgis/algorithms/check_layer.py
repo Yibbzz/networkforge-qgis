@@ -29,7 +29,8 @@ class CheckLayerAlgorithm(CustomNetworkAlgorithm):
     def shortHelpString(self):
         return (
             "Checks that your lines and their attributes can be used by "
-            "\"Build scenario network\", without downloading anything.\n\n"
+            "\"Build scenario network\" or \"Build standalone network\", "
+            "without downloading anything.\n\n"
             "Choose the same travel type you will build with: a preset, or "
             "\"Use each feature's own attributes\".\n\n"
             "If something is wrong, the tool stops with a list of the "
