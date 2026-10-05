@@ -153,7 +153,7 @@ way id changes that street instead of adding a line:
    network; removed streets are in the Before network only.
 
 The engine's
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.10.0/docs/tagging-guide.md#changing-existing-streets)
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.11.0/docs/tagging-guide.md#changing-existing-streets)
 has the details.
 
 ## Requirements

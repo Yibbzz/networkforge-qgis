@@ -24,7 +24,7 @@ Every use below follows the same three steps:
 New to the plugin? Install it from the [README](../README.md#install)
 first. How to describe a line (which `highway` type, who may use it) is
 in the engine's
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.10.0/docs/tagging-guide.md).
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.11.0/docs/tagging-guide.md).
 
 ## 1. A proposed road, cycleway or bridge
 

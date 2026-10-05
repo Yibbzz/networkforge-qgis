@@ -155,11 +155,16 @@ def test_build_changes_and_removes_existing_streets(
     assert {f["car_direction"] for f in before.getFeatures()} == {"both"}
     assert 1002 in {f["osmid"] for f in before.getFeatures()}
     assert 1002 not in {f["osmid"] for f in after.getFeatures()}
-    # Counted from the layer: the engine's own numbers count a two-way
-    # street once per direction.
+    # The engine's counts are rows of the layer: one per street segment.
     assert (f"After network: {after.featureCount()} street segments, of which "
             f"3 new and {len(changed)} changed.") in feedback.infos
-    assert "Streets were removed: they are in the Before network only." in feedback.infos
+    removed = sum(1 for f in before.getFeatures() if f["osmid"] == 1002)
+    assert (f"Street segments removed: {removed}. They are in the Before network "
+            "only.") in feedback.infos
+    # OSM text on existing and changed streets alike (empty on a new line
+    # that has no oneway attribute), never true/false.
+    assert {f["oneway"] for f in changed} == {"yes"}
+    assert {f["oneway"] for f in after.getFeatures() if f["oneway"]} == {"yes", "no"}
 
 
 # Two streets that cross mid-way without a shared vertex, and one apart.

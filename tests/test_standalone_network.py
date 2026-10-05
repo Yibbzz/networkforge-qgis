@@ -140,6 +140,7 @@ def test_separate_pieces_warn_and_select_the_lines_outside_the_largest(
 
     assert feedback.warnings[0] == "The network is in 2 separate pieces."
     assert lines.selectedFeatureIds() == [stray]
+    assert "Network: 3 street segments." in feedback.infos
 
 
 def test_engine_error_links_the_guide_and_selects_the_feature(build, fake_engine, lines):

@@ -139,15 +139,18 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
         if done is None:
             return {}
 
-        counts = self.count_edges(outputs["--gpkg"], ("custom", "modified"))
-        if counts is not None:
-            feedback.pushInfo(
-                "After network: {:,} street segments, of which {:,} new and "
-                "{:,} changed.".format(*counts)
+        feedback.pushInfo(
+            "After network: {:,} street segments, of which {:,} new and "
+            "{:,} changed.".format(
+                done.get("edges", 0), done.get("custom_edges", 0),
+                done.get("modified_edges", 0),
             )
-        if done.get("removed_edges"):
+        )
+        removed = done.get("removed_edges", 0)
+        if removed:
             feedback.pushInfo(
-                "Streets were removed: they are in the Before network only."
+                f"Street segments removed: {removed:,}. They are in the "
+                "Before network only."
             )
         feedback.pushInfo(f"Done. Files are in {folder}")
         feedback.pushInfo(f"Map data {styling.OSM_CREDIT}")

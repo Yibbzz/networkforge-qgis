@@ -23,7 +23,6 @@ from qgis.core import (
     QgsProcessingParameterString,
     QgsProcessingUtils,
     QgsProject,
-    QgsVectorLayer,
 )
 from qgis.PyQt.QtCore import QObject, pyqtSignal
 
@@ -290,28 +289,6 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
                     "QGIS: remove the layers of the earlier run from the "
                     "project, or choose another output folder."
                 )
-
-    @staticmethod
-    def count_edges(gpkg, flags=()):
-        """How many rows a network's edges layer has.
-
-        Returns (all rows, rows where each of `flags` is "yes"...), or
-        None if the file can't be read. The layer's rows are counted,
-        rather than using the numbers in the engine's "done" event, because
-        those count a two-way street once per direction.
-        """
-        layer = QgsVectorLayer(f"{gpkg}|layername=edges", "edges", "ogr")
-        if not layer.isValid():
-            return None
-        counts = [layer.featureCount()]
-        for flag in flags:
-            if layer.fields().indexOf(flag) < 0:  # left out when no edge has it
-                counts.append(0)
-                continue
-            request = QgsFeatureRequest().setFilterExpression(f"\"{flag}\" = 'yes'")
-            request.setNoAttributes()
-            counts.append(sum(1 for _ in layer.getFeatures(request)))
-        return tuple(counts)
 
     @staticmethod
     def load_edges(context, gpkg, name, output, style, credit=styling.OSM_CREDIT):

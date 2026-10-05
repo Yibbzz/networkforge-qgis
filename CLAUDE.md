@@ -34,7 +34,7 @@ the output that matters most.
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v0.10.0`) in one constant. The
+- **Pin the engine version** (currently `v0.11.0`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -71,7 +71,7 @@ the output that matters most.
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v0.10.0.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v0.11.0.zip"`
   (with `uv venv --python 3.12 --python-preference only-managed` - uv
   downloads its own Python, so QGIS's Python version doesn't matter.
   Without `only-managed` uv reuses a matching Python it finds; the
@@ -111,7 +111,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v0.10.0)
+## Engine contract (v0.11.0)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
@@ -181,14 +181,11 @@ The engine leaves a GeoPackage column out when no edge has a value:
 `custom` is missing from the before network and from a build of changes
 only, `modified` from a build with no changes. Check a field exists
 before styling by it. `osmid` is the OSM way id (empty on custom edges).
-`oneway` is a boolean in some outputs and the text `True`/`False` in
-others (new lines and changes in one build), so read `car_direction`
-instead.
-
-The `done` event's `edges`, `custom_edges`, `modified_edges` and
-`removed_edges` count a two-way OSM street once per direction, so they
-don't match the GeoPackage's rows (one per street). The plugin counts
-the rows of the output layer for its log (`count_edges` in `common.py`).
+Since v0.11.0 `oneway` in the GeoPackage is always OSM text (`yes`,
+`no`, `-1`), never a boolean, and the `done` event's `edges`,
+`custom_edges`, `modified_edges` and `removed_edges` count one per
+street, the same as the GeoPackage's rows, so the plugin reports them
+as they are.
 
 Since v0.9.0 every connected piece of the network is kept. The PBF holds
 OpenStreetMap as it is: way ids, all tags, turn restrictions, ferries.

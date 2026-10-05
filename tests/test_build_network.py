@@ -200,14 +200,18 @@ def test_progress_and_warnings_reach_the_user(build, fake_engine, feedback):
     assert feedback.warnings[0] == "1 custom feature(s) don't connect"
 
 
-def test_removed_streets_are_mentioned(build, fake_engine, feedback):
-    note = "Streets were removed: they are in the Before network only."
+def test_counts_of_new_changed_and_removed_streets_are_reported(build, fake_engine, feedback):
     build()
-    assert note not in feedback.infos
+    assert "After network: 2 street segments, of which 1 new and 0 changed." in feedback.infos
+    assert not [info for info in feedback.infos if "removed" in info]
 
-    fake_engine.play([dict(DONE, removed_edges=2)])
+    fake_engine.play([dict(DONE, edges=1200, custom_edges=3, modified_edges=2,
+                           removed_edges=4)])
     build()
-    assert note in feedback.infos
+    assert ("After network: 1,200 street segments, of which 3 new and 2 changed."
+            in feedback.infos)
+    assert ("Street segments removed: 4. They are in the Before network only."
+            in feedback.infos)
 
 
 def test_fields_that_change_existing_streets_are_exported(build, fake_engine, lines):

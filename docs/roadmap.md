@@ -56,7 +56,7 @@ already take care of:
 The engine accepts every tag in the right-hand column, and since
 engine v0.6.0 its Valhalla tests check that each one reaches the PBF
 file and changes the routes Valhalla gives. The engine's
-[network-analyst.md](https://github.com/Yibbzz/networkforge/blob/v0.10.0/docs/network-analyst.md)
+[network-analyst.md](https://github.com/Yibbzz/networkforge/blob/v0.11.0/docs/network-analyst.md)
 lists each ArcGIS feature, the tag that replaces it and the test that
 proves it.
 

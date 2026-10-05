@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.2.1 - 2026-10-05
+
+- The plugin now uses NetworkForge engine v0.11.0 (was v0.10.0); the
+  first tool you run replaces the installed engine. From the engine: the
+  `oneway` field of the network layers is always text (`yes`, `no` or
+  `-1`), where it used to mix true/false and text; a line drawn along an
+  existing street joins it at every junction it passes; a download from
+  OpenStreetMap that fails is tried again twice before giving up; and
+  "Build standalone network" no longer mentions OpenStreetMap in its
+  progress messages.
+- "Build scenario network" says how many street segments were removed.
+
 ## 0.2.0 - 2026-10-05
 
 - The plugin now uses NetworkForge engine v0.10.0 (was v0.5.0). The

@@ -125,9 +125,7 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
         if done is None:
             return {}
 
-        counts = self.count_edges(outputs["--gpkg"])
-        if counts is not None:
-            feedback.pushInfo(f"Network: {counts[0]:,} street segments.")
+        feedback.pushInfo(f"Network: {done.get('edges', 0):,} street segments.")
         feedback.pushInfo(f"Done. Files are in {folder}")
 
         # No OpenStreetMap data in this network, so no credit to give.
