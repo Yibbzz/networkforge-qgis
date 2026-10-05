@@ -56,6 +56,19 @@ The **Build scenario network** tool, in the Processing Toolbox:
 
 Map data in the images © OpenStreetMap contributors (ODbL).
 
+### What people use it for
+
+[Use cases](docs/use-cases.md) walks through the most common questions,
+step by step:
+
+- **Planning**: what does a proposed road, cycleway or bridge change?
+- **Floods and other emergencies**: which places are cut off, or lose
+  their ambulance cover, if these roads close?
+- **Traffic schemes**: closing a street, a one-way scheme, a low-traffic
+  neighbourhood, a 20 mph zone.
+- **Your own street data**: route on a planned neighbourhood or a
+  council's centrelines, without OpenStreetMap.
+
 This is a proof of concept and the QGIS front end only. All the network
 logic lives in the separate engine,
 [NetworkForge](https://github.com/Yibbzz/networkforge), which the plugin
