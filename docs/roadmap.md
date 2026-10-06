@@ -70,18 +70,38 @@ A first check without QGIS passed on 2026-10-02: a before and after PBF
 from the engine (the test street grid plus a diagonal cycleway) were
 built into Valhalla graphs with `pyvalhalla` 3.9.0. The cycling route
 corner to corner dropped from 606 m to 429 m; walking and driving
-stayed at 606 m, as they should for a cycleway. Still to do, in the
-Network Analyst plugin itself:
+stayed at 606 m, as they should for a cycleway.
 
-- [ ] Install the Network Analyst plugin and its `pyvalhalla` package.
-- [ ] Build a small scenario with NetworkForge (the Monaco footbridge
-      from the README is enough).
-- [ ] In the Network Analyst plugin, build one graph from
-      `before.osm.pbf` and one from `after.osm.pbf`.
-- [ ] Run the same walking route, or the same isochrone, on both. The
-      after result must use the new line.
-- [ ] Note anything that goes wrong: Valhalla rejecting the file, the
-      new line not being used, a missing tag.
+**Checked in the Network Analyst plugin itself since 2026-10-06**, by
+the automated tests in `tests/test_network_analyst.py`. They build the
+networks with this plugin's tools, build a Valhalla graph from each PBF,
+start Valhalla on the computer and run the Network Analyst plugin's own
+Processing tools against it. They run on every push, on QGIS 3 (LTR)
+with their plugin 6.1.0 and on QGIS 4 with their plugin 7.1.0, and once
+a week against the newest commit of their plugin and the newest
+`pyvalhalla` (workflow "Network Analyst (newest)").
+
+- [x] New lines: a cycleway shortens the cycling route only; a road
+      shortens the drive.
+- [x] Changes to existing streets: removed, closed to everyone, closed
+      to motor traffic, made one-way, given a lower speed limit.
+- [x] A banned turn, in OpenStreetMap and in a standalone network.
+- [x] Standalone networks: joined at crossings or at vertices only,
+      bridges, one-way streets.
+- [x] Their walking isochrone runs on the after network.
+
+Still to do by hand, once, on a computer with a screen:
+
+- [ ] In the Network Analyst plugin's settings, install `pyvalhalla` and
+      build a graph from `after.osm.pbf` with its own button. The tests
+      can't click it; they run the same programs (`valhalla_build_tiles`,
+      `valhalla_service`) directly.
+- [ ] Do it on a real area (the Monaco footbridge from the README).
+
+Found on the way: run from Python or `qgis_process`, the Network Analyst
+plugin's tools refuse their own defaults for drop-down settings
+("Incorrect parameter value for INPUT_MODE"), so those must be given.
+Worth reporting to routing.earth.
 
 Everything below depends on this. If it fails, the fix belongs in the
 engine, not in this plugin.

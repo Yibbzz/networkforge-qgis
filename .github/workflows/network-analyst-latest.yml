@@ -1,0 +1,38 @@
+name: Network Analyst (newest)
+
+# The normal tests route on the PBF files with a pinned commit of
+# routing.earth's QGIS Network Analyst plugin and a pinned pyvalhalla, so
+# a change over there never breaks a push here. This runs the same
+# scenarios every week against the newest commit of their plugin and the
+# newest pyvalhalla - what someone installing both plugins today gets.
+# If it fails, something changed on their side or in Valhalla: look at
+# what, then fix the engine, report it to them, or move the pins.
+on:
+  schedule:
+    - cron: "0 5 * * 1"   # Mondays, 05:00 UTC
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: QGIS ${{ matrix.qgis }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # ltr: QGIS 3 and their qgis-v3 branch; latest: QGIS 4 and master.
+        qgis: [ltr, latest]
+    container:
+      image: qgis/qgis:${{ matrix.qgis }}
+    env:
+      QT_QPA_PLATFORM: offscreen
+      NF_NETWORK_ANALYST: latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install test tools
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: "1"
+        run: python3 -m pip install -r requirements-dev.txt
+
+      - name: Route on the PBF files with the newest Network Analyst plugin
+        run: python3 -m pytest -v -s -m network_analyst

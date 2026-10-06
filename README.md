@@ -2,6 +2,7 @@
 
 [![tests](https://github.com/Yibbzz/networkforge-qgis/actions/workflows/tests.yml/badge.svg)](https://github.com/Yibbzz/networkforge-qgis/actions/workflows/tests.yml)
 [![coverage](https://codecov.io/gh/Yibbzz/networkforge-qgis/graph/badge.svg)](https://codecov.io/gh/Yibbzz/networkforge-qgis)
+[![Network Analyst (newest)](https://github.com/Yibbzz/networkforge-qgis/actions/workflows/network-analyst-latest.yml/badge.svg)](https://github.com/Yibbzz/networkforge-qgis/actions/workflows/network-analyst-latest.yml)
 
 A QGIS plugin for adding your own proposed roads, cycleways and paths to
 the OpenStreetMap network, and getting a **before** and an **after**
@@ -30,9 +31,10 @@ steps, on top of OpenStreetMap:
    that start from a real planning question and work in the QGIS,
    OpenStreetMap and Valhalla world.
 
-Step 1 works today. Step 2 is the next thing to prove and document; see
-the [roadmap](docs/roadmap.md) for where things stand and what comes
-next.
+Step 1 works today, and step 2 is
+[tested automatically](#tested-with-the-network-analyst-plugin) with the
+Network Analyst plugin on QGIS 3 and QGIS 4. Step 3 is next; see the
+[roadmap](docs/roadmap.md) for where things stand.
 
 ## What it does
 
@@ -175,6 +177,39 @@ network tools ignore them. For a rule that applies to lorries or buses
 only, and for exceptions, see the
 [tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.12.0/docs/tagging-guide.md#turn-restrictions).
 
+## Tested with the Network Analyst plugin
+
+The PBF files are made to be routed on with routing.earth's
+[QGIS Network Analyst plugin](https://github.com/routing-earth/network-analyst-qgis-plugin),
+which runs Valhalla on your own computer. That pairing is tested
+automatically: the tests build networks with this plugin, build a
+Valhalla graph from each PBF file, and run the Network Analyst plugin's
+own route and isochrone tools on it. They check that:
+
+| When you | The Network Analyst plugin's routes |
+|---|---|
+| add a cycleway | get shorter by bike, and stay the same by car |
+| add a road | get shorter and quicker by car |
+| remove a street, or close it to everyone | go round it, by car and on foot |
+| close a street to motor traffic | go round it by car, still use it by bike and on foot |
+| make a street one-way | follow it one way and go round the other way; walkers are not affected |
+| lower a speed limit | take longer over the same distance |
+| ban a turn | go round the block by car; walkers still turn |
+| build a standalone network | cross the junctions made where your lines cross |
+| ... joined at shared vertices only | do not turn where lines merely cross |
+| ... with a bridge | pass over without turning onto it |
+| ... with a one-way street or a banned turn | obey it |
+
+These run on every change, on QGIS 3 (long-term release) with their
+plugin 6.1 and on QGIS 4 with their plugin 7.1, using Valhalla 3.9.0.
+Once a week the same checks run against the newest version of their
+plugin and of Valhalla; the third badge at the top of this page shows
+the result.
+
+Not covered: their plugin's own button for building a graph from a PBF
+file (a test can't click it; the tests run the same Valhalla programs
+directly), and areas larger than a few streets.
+
 ## Requirements
 
 QGIS 3.34 or newer (developed on the 3.44 LTR).
@@ -210,6 +245,15 @@ plays back prepared replies, so they run in seconds. The end-to-end
 tests (`-m engine`) use the real engine on a tiny hand-made street grid
 (`tests/data/grid.osm`); their first run installs the engine, which
 needs an internet connection. To skip them: `pytest -m "not engine"`.
+
+The tests marked `network_analyst` route on the PBF files with
+routing.earth's QGIS Network Analyst plugin and Valhalla (see
+[Tested with the Network Analyst plugin](#tested-with-the-network-analyst-plugin)).
+Their first run downloads that plugin and the `pyvalhalla` package
+(about 100 MB) into `.pytest_cache`; nothing is installed into QGIS.
+Port 8002 must be free, because that is where the plugin looks for a
+Valhalla on your own computer. To skip them:
+`pytest -m "not network_analyst"`.
 
 GitHub runs all of them on every push, in the official QGIS Docker
 image, for both the long-term release and the latest QGIS.

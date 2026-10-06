@@ -296,6 +296,24 @@ networkforge-qgis/
   local extract (`--osm-source`), never Overpass. A tiny extract can be
   generated with the engine itself (`networkforge.write_osm`) or taken
   from Geofabrik (e.g. Monaco, <1 MB).
+- `tests/test_network_analyst.py` (marker `network_analyst`, part of the
+  normal run and CI) routes on the PBF files with routing.earth's Network
+  Analyst plugin: it downloads the plugin at a pinned commit (`qgis-v3`
+  branch for QGIS 3, `master` for QGIS 4) and a pinned `pyvalhalla` into
+  `.pytest_cache/network-analyst`, serves a graph on port 8002 (the
+  plugin's "localhost" provider) and runs the plugin's Processing tools
+  (`valhalla:valhalla_directions_auto`, ...). `NF_NETWORK_ANALYST=latest`
+  uses the newest commit and newest pyvalhalla instead; the weekly
+  workflow `network-analyst-latest.yml` runs that. Things learned:
+  their package is called `valhalla`, the same as pyvalhalla's module, so
+  pyvalhalla lives in its own environment; their enum parameters need
+  explicit values from Python; start and end trips mid-block, because
+  Valhalla is unpredictable about trips that start exactly on a junction;
+  kill `valhalla_service` rather than terminate it (it takes ~10 s to
+  wind down). A failure here that is a wrong network belongs in the
+  engine; add a scenario for every new kind of change the engine learns.
+- A one-way change (`oneway=yes` on a feature with an OSM id) runs in the
+  direction the feature is drawn, not the OSM way's direction.
 
 ## Packaging
 - `qgis-plugin-ci` builds the zip from `metadata.txt` and publishes to

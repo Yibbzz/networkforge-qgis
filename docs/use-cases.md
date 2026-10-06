@@ -110,7 +110,7 @@ id, then change an attribute:
 |---|---|
 | Close a street to everyone | `access` = `no` |
 | Close it to motor traffic, keep walking and cycling | `motor_vehicle` = `no` |
-| Make it one-way | `oneway` = `yes`, or `-1` for the opposite direction |
+| Make it one-way | `oneway` = `yes`: traffic runs the way your line is drawn (`-1` for the opposite way) |
 | Take it out altogether | `remove` = `yes` |
 | Turn a road into a pedestrian street | `highway` = `pedestrian` |
 | Ban a turn at a junction | a short line through the junction with `restriction` = `no_left_turn` (see below) |
@@ -119,11 +119,11 @@ Only attributes that differ from OpenStreetMap are applied, so the
 other fields of the copied street can stay as they are. Changed streets
 are drawn in orange in the After network.
 
-Always check which way a new one-way street runs: look at
-`car_direction` in the after layer (`forward` and `backward` are
-relative to the direction the line is drawn in; show it with an arrow
-symbol), or route a trip across it. If it is the wrong way round, swap
-`yes` and `-1`.
+A one-way street runs in the direction **your** line is drawn, whichever
+way OpenStreetMap has the street. A street copied from the Before layer
+keeps OpenStreetMap's direction, so check it: show the layer with an
+arrow symbol, and if it points the wrong way use **Reverse line** or set
+`oneway` to `-1`.
 
 **Banned turns.** A turn restriction is not a change to one street, so
 it is drawn instead of copied: a short line from the street you arrive

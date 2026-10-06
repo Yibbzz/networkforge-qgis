@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- The PBF files are now tested with routing.earth's QGIS Network Analyst
+  plugin on every change: new lines, removed and closed streets, one-way
+  streets, speed limits, banned turns and standalone networks are built,
+  turned into Valhalla graphs and routed on with that plugin's own tools,
+  on QGIS 3 and QGIS 4. A weekly check uses the newest version of their
+  plugin and of Valhalla. See "Tested with the Network Analyst plugin"
+  in the README.
+- The use-case guide now says which way a street made one-way runs: the
+  way your line is drawn.
+
 ## 0.3.0 - 2026-10-06
 
 - The plugin now uses NetworkForge engine v0.12.0 (was v0.11.0); the

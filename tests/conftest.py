@@ -11,6 +11,7 @@ from networkforge_qgis.provider import NetworkForgeProvider
 FAKE_ENGINE = Path(__file__).parent / "fake_engine.py"
 
 
+
 class FakeEngine:
     """Controls the stand-in engine and shows what it was asked to do."""
 
