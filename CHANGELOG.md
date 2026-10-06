@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.3.0 - 2026-10-06
+
+- The plugin now uses NetworkForge engine v0.12.0 (was v0.11.0); the
+  first tool you run replaces the installed engine.
+- Turn restrictions: in "Build scenario network" and "Build standalone
+  network", a short line drawn through a junction with a `restriction`
+  field (`no_left_turn`, `only_straight_on`, ...) bans or forces that
+  turn. It is written to the PBF file for routers; the log says how many
+  were added. "Check custom network layer" counts them, and the features
+  that change existing streets.
+- From the engine: attributes that aren't OpenStreetMap tags keep their
+  type in the network layers (a number stays a number, so it can be
+  used as a cost in QGIS); building a standalone network is about four
+  times faster; clearer messages when every line is outside the area or
+  a coordinate isn't a number.
+
 ## 0.2.1 - 2026-10-05
 
 - The plugin now uses NetworkForge engine v0.11.0 (was v0.10.0); the

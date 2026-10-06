@@ -15,7 +15,8 @@ from networkforge_qgis import engine
 from networkforge_qgis.algorithms.common import ID_FIELD
 
 ALGORITHM = "networkforge:check_layer"
-DONE = {"event": "done", "features": 2, "modes": {"walk, bike": 1, "nothing": 1}, "edits": 0}
+DONE = {"event": "done", "features": 2, "modes": {"walk, bike": 1, "nothing": 1}, "edits": 0,
+        "turn_restrictions": 0}
 
 
 @pytest.fixture
@@ -48,6 +49,15 @@ def test_checks_without_an_area_by_default(provider, fake_engine, lines, feedbac
     assert results["FEATURES"] == 2
     assert "No problems found in 2 line(s)." in feedback.infos
     assert "  1 usable by: walk, bike" in feedback.infos
+
+
+def test_changes_and_turn_restrictions_are_counted(provider, fake_engine, lines, feedback):
+    fake_engine.play([dict(DONE, features=5, edits=2, turn_restrictions=1)])
+
+    processing.run(ALGORITHM, {"CUSTOM": lines}, feedback=feedback)
+
+    assert "  2 change existing streets" in feedback.infos
+    assert "  1 turn restriction(s)" in feedback.infos
 
 
 def test_area_preset_and_tags_are_passed_on(provider, fake_engine, lines, feedback):

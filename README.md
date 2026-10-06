@@ -153,8 +153,27 @@ way id changes that street instead of adding a line:
    network; removed streets are in the Before network only.
 
 The engine's
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.11.0/docs/tagging-guide.md#changing-existing-streets)
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.12.0/docs/tagging-guide.md#changing-existing-streets)
 has the details.
+
+### Banning or forcing a turn
+
+In both build tools, a turn restriction ("no left turn here", "straight
+on only") is a short line in the same layer:
+
+1. Draw it from the street you arrive on, **through the junction**,
+   onto the street you leave on. Snap to the streets, start and end a
+   little way along each, and pass through one junction only.
+2. Give the layer a text field called `restriction` and set it to
+   `no_left_turn`, `no_right_turn`, `no_straight_on`, `no_u_turn`, or
+   the same with `only_` in place of `no_`. The line needs no `highway`.
+3. Build. The log says how many turn restrictions were added.
+
+Turn restrictions are written to the PBF file, where routers such as
+Valhalla obey them. The QGIS layers can't show them, so QGIS's own
+network tools ignore them. For a rule that applies to lorries or buses
+only, and for exceptions, see the
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.12.0/docs/tagging-guide.md#turn-restrictions).
 
 ## Requirements
 
@@ -207,13 +226,13 @@ To build a zip by hand: `uvx qgis-plugin-ci package 0.1.0`.
 
 ## Limitations
 
-No public transport and no traffic simulation. Turn restrictions that
-are in OpenStreetMap are kept in the PBF files and routers obey them,
-but you can't add your own, and the QGIS layers know nothing of them.
-An existing street can be changed or removed, not redrawn: to move one,
-remove it and draw the new line. A standalone network has no turn
-restrictions, traffic signals or gates, because a line layer can't
-carry them.
+No public transport and no traffic simulation. Turn restrictions, those
+in OpenStreetMap and those you draw, are in the PBF files for routers
+only: the QGIS layers know nothing of them. A restriction through a
+stretch of street rather than one junction can't be drawn. An existing
+street can be changed or removed, not redrawn: to move one, remove it
+and draw the new line. Traffic signals, gates and bollards can't be
+added to your own lines, so a standalone network has none.
 
 ## Credits and licence
 

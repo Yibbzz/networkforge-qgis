@@ -18,7 +18,7 @@ from qgis.core import (
 )
 
 from .. import engine, styling
-from .common import CustomNetworkAlgorithm
+from .common import CustomNetworkAlgorithm, turn_restrictions_help
 
 WGS84 = "EPSG:4326"
 
@@ -62,6 +62,7 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             f"{info['remove_field']} to yes to take the street out. "
             f"<a href=\"{engine.guide_url('changing-existing-streets')}\">"
             "Guide</a>.\n\n"
+            f"{turn_restrictions_help()}\n\n"
             "<b>OpenStreetMap data</b>: downloaded for the extent unless you "
             f"give a local OSM file, which is required above {limit:,} km2.\n\n"
             "<b>Results</b>: the before and after layers are added to the "
@@ -70,8 +71,8 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             "Valhalla. Changed streets are drawn in orange; removed streets "
             "are only in the before network.\n\n"
             "Not included: public transport and traffic simulation. Turn "
-            "restrictions come from OpenStreetMap and are kept in the PBF "
-            "files; you can't add your own.\n\n"
+            "restrictions, those in OpenStreetMap and those you draw, are in "
+            "the PBF files only.\n\n"
             "Map data © OpenStreetMap contributors (ODbL)."
         )
 
@@ -152,6 +153,7 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
                 f"Street segments removed: {removed:,}. They are in the "
                 "Before network only."
             )
+        self.report_turn_restrictions(done, feedback, "after.osm.pbf")
         feedback.pushInfo(f"Done. Files are in {folder}")
         feedback.pushInfo(f"Map data {styling.OSM_CREDIT}")
 

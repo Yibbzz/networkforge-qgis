@@ -226,3 +226,66 @@ def test_standalone_network_needs_a_kind_of_street_for_every_line(
         "OUTPUT_FOLDER": str(tmp_path / "out"),
     }, feedback=feedback)
     assert QgsVectorLayer(results["NETWORK"], "network", "ogr").featureCount() == 4
+
+
+# From row 1 heading east, left into the second column heading north, at
+# the four-way junction of the two; and a line that crosses no junction.
+LEFT_TURN = [(-3.6992, 40.4009), (-3.6988, 40.4009), (-3.6988, 40.4012)]
+MID_BLOCK = [(-3.6996, 40.4009), (-3.6992, 40.4009)]
+
+
+def test_build_adds_a_turn_restriction_drawn_through_a_junction(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    plan = line_layer((None, None, LEFT_TURN, "no_left_turn"),
+                      extra_fields=("restriction",))
+
+    results = processing.run("networkforge:build_network", {
+        "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(GRID),
+        "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+
+    assert ("Turn restrictions added: 1. They are in after.osm.pbf for routers; "
+            "the QGIS layers can't show them.") in feedback.infos
+    assert not feedback.warnings
+    # The restriction is in the router's file, not a line of the network.
+    after = QgsVectorLayer(results["AFTER"], "after", "ogr")
+    assert after.featureCount() == 24
+    assert Path(results["AFTER_OSM"]).stat().st_size > Path(results["BEFORE_OSM"]).stat().st_size
+
+
+def test_build_refuses_a_turn_restriction_that_is_on_no_junction(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    plan = line_layer((None, None, LEFT_TURN, "no_left_turn"),
+                      (None, None, MID_BLOCK, "no_left_turn"),
+                      extra_fields=("restriction",))
+    good, bad = sorted(f.id() for f in plan.getFeatures())
+
+    with pytest.raises(QgsProcessingException) as raised:
+        processing.run("networkforge:build_network", {
+            "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(GRID),
+            "OUTPUT_FOLDER": str(tmp_path / "out"),
+        }, feedback=feedback)
+
+    assert "doesn't pass through a junction" in str(raised.value)
+    assert real_engine.guide_url("turn-restrictions") in str(raised.value)
+    assert plan.selectedFeatureIds() == [bad]
+
+
+def test_standalone_network_takes_turn_restrictions_and_check_counts_them(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    turn = [(-3.6984, 40.4000), (-3.6980, 40.4000), (-3.6980, 40.4004)]
+    streets = line_layer(("residential", None, STREET, None),
+                         ("residential", None, CROSSING, None),
+                         (None, None, turn, "no_left_turn"),
+                         extra_fields=("restriction",))
+
+    processing.run("networkforge:check_layer", {"CUSTOM": streets}, feedback=feedback)
+    assert "  1 turn restriction(s)" in feedback.infos
+
+    results = processing.run("networkforge:standalone_network", {
+        "CUSTOM": streets, "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+
+    assert any(info.startswith("Turn restrictions added: 1. They are in network.osm.pbf")
+               for info in feedback.infos)
+    assert QgsVectorLayer(results["NETWORK"], "network", "ogr").featureCount() == 4

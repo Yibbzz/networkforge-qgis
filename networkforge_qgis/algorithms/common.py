@@ -51,6 +51,23 @@ def parse_tags(text):
     return tags
 
 
+def turn_restrictions_help():
+    """The paragraph on drawing turn restrictions, for a tool's help."""
+    info = engine.bundled_info()
+    field = info["turn_restriction_fields"][0]
+    values = info["tag_values"][field]
+    return (
+        "<b>Turn restrictions</b>: to ban or force a turn at a junction, "
+        "draw a short line in the same layer from the street you arrive "
+        "on, through the junction, onto the street you leave on, and give "
+        f"it a field called {field} with a value such as {values[0]} or "
+        f"{values[-3]}. It needs no kind of street. Routers such as "
+        "Valhalla obey it; it is written to the PBF file only, because "
+        "the QGIS layers can't show it. "
+        f"<a href=\"{engine.guide_url('turn-restrictions')}\">Guide</a>."
+    )
+
+
 def error_text(error, code):
     """What to tell the user when the engine failed.
 
@@ -344,6 +361,16 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
             feedback.pushWarning(note)
         feedback.setProgress(100)
         return done
+
+    @staticmethod
+    def report_turn_restrictions(done, feedback, file_name):
+        """Say how many turn restrictions were made, and where they are."""
+        count = done.get("turn_restrictions", 0)
+        if count:
+            feedback.pushInfo(
+                f"Turn restrictions added: {count:,}. They are in {file_name} "
+                "for routers; the QGIS layers can't show them."
+            )
 
     def _select(self, feature_ids):
         """Select the features in the custom layer; returns a note for the user."""

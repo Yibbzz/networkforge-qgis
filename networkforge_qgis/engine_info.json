@@ -1,6 +1,6 @@
 {
  "event": "info",
- "version": "0.11.0",
+ "version": "0.12.0",
  "presets": {
   "motorway": {
    "tags": {
@@ -172,6 +172,13 @@
   "osmid"
  ],
  "remove_field": "remove",
+ "turn_restriction_fields": [
+  "restriction",
+  "restriction:hgv",
+  "restriction:bus",
+  "restriction:motorcar",
+  "restriction:bicycle"
+ ],
  "standalone": true,
  "join_at": [
   "crossings",
@@ -263,6 +270,16 @@
   "width"
  ],
  "tag_values": {
+  "restriction": [
+   "no_left_turn",
+   "no_right_turn",
+   "no_straight_on",
+   "no_u_turn",
+   "only_left_turn",
+   "only_right_turn",
+   "only_straight_on",
+   "only_u_turn"
+  ],
   "highway": [
    "bridleway",
    "bus_guideway",

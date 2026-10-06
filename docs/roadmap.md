@@ -56,7 +56,7 @@ already take care of:
 The engine accepts every tag in the right-hand column, and since
 engine v0.6.0 its Valhalla tests check that each one reaches the PBF
 file and changes the routes Valhalla gives. The engine's
-[network-analyst.md](https://github.com/Yibbzz/networkforge/blob/v0.11.0/docs/network-analyst.md)
+[network-analyst.md](https://github.com/Yibbzz/networkforge/blob/v0.12.0/docs/network-analyst.md)
 lists each ArcGIS feature, the tag that replaces it and the test that
 proves it.
 
@@ -142,8 +142,12 @@ plugin (it has no network logic).
       it out. The plugin draws changed streets in orange.
 - [x] **A network from your own data alone**, as Esri's tutorial does:
       engine v0.10.0, "Build standalone network" in this plugin.
-- [ ] **Turn restrictions**: those in OpenStreetMap are kept in the PBF
-      since engine v0.6.0. Adding your own is not supported yet.
+- [x] **Turn restrictions**: those in OpenStreetMap are kept in the PBF
+      since engine v0.6.0. Since engine v0.12.0 you can draw your own, as
+      a short line through a junction with a `restriction` field, as
+      ArcGIS does with a turn feature class. Not covered: restrictions
+      through a stretch of street ("via way"), and turn penalties in
+      seconds (Valhalla works out turn delays itself).
 - [ ] **Public transport**: out of scope for now.
 
 ## Things not planned

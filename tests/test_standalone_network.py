@@ -16,7 +16,7 @@ from networkforge_qgis.algorithms.common import ID_FIELD
 
 ALGORITHM = "networkforge:standalone_network"
 DONE = {"event": "done", "outputs": {}, "nodes": 4, "edges": 3, "custom_edges": 3,
-        "modified_edges": 0, "removed_edges": 0}
+        "modified_edges": 0, "removed_edges": 0, "turn_restrictions": 0}
 
 
 @pytest.fixture
@@ -141,6 +141,15 @@ def test_separate_pieces_warn_and_select_the_lines_outside_the_largest(
     assert feedback.warnings[0] == "The network is in 2 separate pieces."
     assert lines.selectedFeatureIds() == [stray]
     assert "Network: 3 street segments." in feedback.infos
+
+
+def test_turn_restrictions_are_reported_with_where_they_are(build, fake_engine, feedback):
+    fake_engine.play([dict(DONE, turn_restrictions=1)])
+
+    build()
+
+    assert ("Turn restrictions added: 1. They are in network.osm.pbf for routers; "
+            "the QGIS layers can't show them.") in feedback.infos
 
 
 def test_engine_error_links_the_guide_and_selects_the_feature(build, fake_engine, lines):

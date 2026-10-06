@@ -75,6 +75,10 @@ class EngineInfoAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo("Presets: " + ", ".join(info["presets"]))
         feedback.pushInfo("Network types: " + ", ".join(info["network_types"]))
         feedback.pushInfo("Travel modes: " + ", ".join(info["modes"]))
+        if info.get("turn_restriction_fields"):
+            feedback.pushInfo(
+                "Turn restriction fields: " + ", ".join(info["turn_restriction_fields"])
+            )
         if info.get("standalone"):
             feedback.pushInfo(
                 "Standalone networks (without OpenStreetMap): lines join at "

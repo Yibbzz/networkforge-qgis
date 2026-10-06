@@ -20,7 +20,7 @@ ALGORITHM = "networkforge:build_network"
 # West of Greenwich, so the western longitude is negative.
 EXTENT = "-3.70,-3.60,40.40,40.45 [EPSG:4326]"
 DONE = {"event": "done", "outputs": {}, "nodes": 1, "edges": 2, "custom_edges": 1,
-        "modified_edges": 0, "removed_edges": 0}
+        "modified_edges": 0, "removed_edges": 0, "turn_restrictions": 0}
 
 
 @pytest.fixture
@@ -214,11 +214,23 @@ def test_counts_of_new_changed_and_removed_streets_are_reported(build, fake_engi
             in feedback.infos)
 
 
+def test_turn_restrictions_are_reported_with_where_they_are(build, fake_engine, feedback):
+    build()
+    assert not [info for info in feedback.infos if "Turn restrictions" in info]
+
+    fake_engine.play([dict(DONE, turn_restrictions=2)])
+    build()
+    assert ("Turn restrictions added: 2. They are in after.osm.pbf for routers; "
+            "the QGIS layers can't show them.") in feedback.infos
+
+
 def test_fields_that_change_existing_streets_are_exported(build, fake_engine, lines):
     # The engine reads these from the file: osm_id / osmid name the street
-    # a feature changes, and remove=yes takes it out.
+    # a feature changes, remove=yes takes it out, and restriction (also
+    # restriction:hgv and so on, with a colon) makes a turn restriction.
     info = engine.bundled_info()
-    wanted = [*info["edit_id_fields"], info["remove_field"]]
+    wanted = [*info["edit_id_fields"], info["remove_field"],
+              *info["turn_restriction_fields"], "except"]
     lines.dataProvider().addAttributes(
         [QgsField(name, lines.fields().at(0).type()) for name in wanted])
     lines.updateFields()

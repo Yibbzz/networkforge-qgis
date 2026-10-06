@@ -34,7 +34,7 @@ the output that matters most.
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v0.11.0`) in one constant. The
+- **Pin the engine version** (currently `v0.12.0`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -71,7 +71,7 @@ the output that matters most.
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v0.11.0.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v0.12.0.zip"`
   (with `uv venv --python 3.12 --python-preference only-managed` - uv
   downloads its own Python, so QGIS's Python version doesn't matter.
   Without `only-managed` uv reuses a matching Python it finds; the
@@ -111,7 +111,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v0.11.0)
+## Engine contract (v0.12.0)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
@@ -122,6 +122,7 @@ Commands:
   `max_overpass_area_km2`, `osm_formats`, `gpkg_edge_columns`,
   `edit_id_fields` (`osm_id`, `osmid`), `remove_field` (`remove`),
   `standalone` (true), `join_at` (`crossings`, `vertices`),
+  `turn_restriction_fields` (`restriction`, `restriction:hgv`, ...),
   `tag_keys`, `tag_values` (valid values for `highway`, `oneway` and
   the access keys: `access`, `foot`, `bicycle`, `bus`, `hgv`, ...),
   `tag_patterns` (regexes for `maxspeed`, `lanes`, `layer` and the
@@ -147,7 +148,7 @@ JSON events on stdout (stderr is human-readable log text):
 {"event": "progress", "step": 2, "total": 13, "message": "Downloading OSM network"}
 {"event": "warning", "message": "...", "features": [17]}          // or "fields": ["length"]
 {"event": "done", "outputs": {"gpkg": "...", "baseline_gpkg": "..."}, "nodes": 1, "edges": 2,
- "custom_edges": 3, "modified_edges": 0, "removed_edges": 0}   // check: "features", "modes", "edits"
+ "custom_edges": 3, "modified_edges": 0, "removed_edges": 0, "turn_restrictions": 0}   // check: "features", "modes", "edits", "turn_restrictions"
 {"event": "error", "type": "InvalidTagsError", "message": "...", "guide": "fixing-tag-errors",
  "issues": [{"feature": 17, "message": "maxspeed='fast' is not a valid OSM speed"}]}
 ```
@@ -172,6 +173,22 @@ it lies along); with `remove` = `yes` the stretch is taken out. The
 plugin only has to export those fields, which it does. Changed edges
 have `modified` = `yes` in the after GeoPackage. Errors use the guide
 anchor `changing-existing-streets`.
+
+Turn restrictions (since v0.12.0): a custom feature with a `restriction`
+field (or `restriction:hgv` / `:bus` / `:motorcar` / `:bicycle`;
+optional `except`) drawn from one street, through exactly one junction,
+onto another becomes an OSM turn restriction relation in the after (or
+standalone) PBF. It is not a row in the GeoPackage, so nothing can be
+styled or counted in QGIS: the plugin reports `turn_restrictions` from
+the `done` event. It needs no `highway`. A line through no junction or
+several is an error naming the feature; a value that disagrees with the
+drawn turn is a warning. Guide anchor: `turn-restrictions`. The plugin
+only has to export the fields (GeoPackage keeps the colon in
+`restriction:hgv`).
+
+Since v0.11.1 attributes that aren't tags keep their type in the
+GeoPackage, and text `True` / `False` is no longer read as `yes` / `no`
+(a boolean field still is).
 
 Standalone networks (since v0.10.0): a `warning` event names the
 `features` outside the largest connected piece. Guide anchor:
@@ -256,9 +273,10 @@ networkforge-qgis/
 - `car` in the GeoPackage excludes service roads (OSMnx's drive rule).
 - OSM data needs credit: show "© OpenStreetMap contributors" (ODbL).
 - Engine limitations to state in the plugin docs: no public transport,
-  no traffic simulation; turn restrictions come from OpenStreetMap only
-  (kept in the PBF, users can't add their own); existing streets can be
-  re-tagged or removed, not redrawn.
+  no traffic simulation; turn restrictions (OpenStreetMap's and the
+  user's own) are in the PBF only, not the GeoPackage, and "via way"
+  restrictions can't be drawn; existing streets can be re-tagged or
+  removed, not redrawn.
 - Upgrading the engine: change `ENGINE_VERSION` in `engine.py`, save the
   new `networkforge info --json` as `engine_info.json` (indent 1), and
   run the end-to-end tests (`pytest -m engine`), which install the pinned

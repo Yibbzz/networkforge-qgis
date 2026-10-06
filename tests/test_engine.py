@@ -47,7 +47,8 @@ def test_bundled_info_is_for_the_pinned_version():
     info = engine.bundled_info()
     assert info["version"] == engine.ENGINE_VERSION
     for key in ("presets", "network_types", "max_overpass_area_km2", "osm_formats",
-                "tag_values", "tag_patterns", "edit_id_fields", "remove_field", "join_at"):
+                "tag_values", "tag_patterns", "edit_id_fields", "remove_field", "join_at",
+                "turn_restriction_fields"):
         assert key in info
     assert "all" in info["network_types"]
     assert info["standalone"] is True

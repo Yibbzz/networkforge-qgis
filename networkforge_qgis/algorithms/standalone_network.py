@@ -15,7 +15,7 @@ from qgis.core import (
 )
 
 from .. import engine, styling
-from .common import CustomNetworkAlgorithm
+from .common import CustomNetworkAlgorithm, turn_restrictions_help
 
 # How the engine's --join-at choices read in the form. A choice a newer
 # engine adds is shown under its own name.
@@ -65,8 +65,9 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
             "If the lines don't form one connected network, a warning says "
             "so and the lines outside the largest piece are selected: most "
             "often they stop short of the street they should meet.\n\n"
-            "A line layer can't carry turn restrictions, or things that "
-            "sit on points such as traffic signals and gates. "
+            f"{turn_restrictions_help()}\n\n"
+            "A line layer can't carry things that sit on points, such as "
+            "traffic signals and gates. "
             f"<a href=\"{engine.guide_url('a-network-of-your-own-lines')}\">"
             "Guide</a>."
         )
@@ -126,6 +127,7 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
             return {}
 
         feedback.pushInfo(f"Network: {done.get('edges', 0):,} street segments.")
+        self.report_turn_restrictions(done, feedback, "network.osm.pbf")
         feedback.pushInfo(f"Done. Files are in {folder}")
 
         # No OpenStreetMap data in this network, so no credit to give.

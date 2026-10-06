@@ -24,7 +24,7 @@ Every use below follows the same three steps:
 New to the plugin? Install it from the [README](../README.md#install)
 first. How to describe a line (which `highway` type, who may use it) is
 in the engine's
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.11.0/docs/tagging-guide.md).
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.12.0/docs/tagging-guide.md).
 
 ## 1. A proposed road, cycleway or bridge
 
@@ -113,6 +113,7 @@ id, then change an attribute:
 | Make it one-way | `oneway` = `yes`, or `-1` for the opposite direction |
 | Take it out altogether | `remove` = `yes` |
 | Turn a road into a pedestrian street | `highway` = `pedestrian` |
+| Ban a turn at a junction | a short line through the junction with `restriction` = `no_left_turn` (see below) |
 
 Only attributes that differ from OpenStreetMap are applied, so the
 other fields of the copied street can stay as they are. Changed streets
@@ -123,6 +124,14 @@ Always check which way a new one-way street runs: look at
 relative to the direction the line is drawn in; show it with an arrow
 symbol), or route a trip across it. If it is the wrong way round, swap
 `yes` and `-1`.
+
+**Banned turns.** A turn restriction is not a change to one street, so
+it is drawn instead of copied: a short line from the street you arrive
+on, through the junction, onto the street you leave on, with a field
+called `restriction` set to `no_left_turn`, `no_right_turn`,
+`no_straight_on`, `no_u_turn` or the same with `only_`. Only routers
+obey turn restrictions, so compare the before and after with Valhalla
+(below), not with QGIS's own network tools.
 
 ## 4. A lower speed limit
 
@@ -204,8 +213,8 @@ ferries, and vehicle types such as bus and truck.
   reached. Counting homes, jobs or patients inside a service area is a
   second step with your own data (for example **Count Points in
   Polygon**).
-- **New turn restrictions.** Those in OpenStreetMap are kept; you can't
-  add your own.
+- **Turn restrictions in QGIS's own tools.** They are in the PBF files
+  for routers; the QGIS layers can't show them.
 - **Whether OpenStreetMap is right.** The result is as good as the
   street data for your area. Look at the Before network before you rely
   on it.
