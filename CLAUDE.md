@@ -338,6 +338,16 @@ networkforge-qgis/
 - A one-way change (`oneway=yes` on a feature with an OSM id) runs in the
   direction the feature is drawn, not the OSM way's direction.
 
+## Pictures in the docs
+- `scripts/make_examples.py` builds the example networks with the
+  plugin's tools and draws them with Valhalla routes
+  (`docs/images/example-*.png`, used by `docs/examples.md`). Rerun it
+  when styling or an example changes; the numbers in `docs/examples.md`
+  are printed by it and must be kept in step by hand.
+- `scripts/make_form_images.py` grabs the tools' forms from QGIS desktop
+  running off-screen (`docs/images/*-form.png`). Rerun it whenever a
+  tool's parameters or help text change.
+
 ## Packaging
 - `qgis-plugin-ci` builds the zip from `metadata.txt` and publishes to
   plugins.qgis.org on a version tag (needs an OSGeo account). Start as

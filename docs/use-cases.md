@@ -22,7 +22,8 @@ Every use below follows the same three steps:
 | A masterplanner, or anyone with their own street data | Can I route on a network that isn't in OpenStreetMap? | [5](#5-a-network-from-your-own-data) |
 
 New to the plugin? Install it from the [README](../README.md#install)
-first. How to describe a line (which `highway` type, who may use it) is
+first, and see the [examples](examples.md) for pictures of what each
+kind of change does. How to describe a line (which `highway` type, who may use it) is
 in the engine's
 [tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.0/docs/tagging-guide.md).
 
@@ -177,8 +178,10 @@ If the lines don't form one connected network, a warning says so and
 the stray lines are selected. Most often they stop just short of the
 street they should meet.
 
-This is what ArcGIS users do with "Create a network dataset". It is
-also the way to work where you may not, or don't want to, use
+This is what ArcGIS users do with "Create a network dataset"; if your
+data was prepared for ArcGIS, see
+[Moving an ArcGIS street network to QGIS](migrating-from-arcgis.md). It
+is also the way to work where you may not, or don't want to, use
 OpenStreetMap data.
 
 ## Comparing before and after

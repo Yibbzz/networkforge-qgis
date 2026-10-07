@@ -54,9 +54,26 @@ what the proposal changes, here the streets within a 10-minute walk:
 
 The **Build scenario network** tool, in the Processing Toolbox:
 
-![The Build scenario network form: area, custom network layer, travel type, speed limit, local OSM file and output folder](docs/images/build-form.png)
+![The Build scenario network form: area, custom network layer, points layer, travel type, speed limit, local OSM file and output folder](docs/images/build-form.png)
+
+**Build standalone network** has the same form without the area and the
+OSM file:
+
+![The Build standalone network form: network layer, points layer, travel type, speed limit, where lines join and output folder](docs/images/standalone-form.png)
 
 Map data in the images © OpenStreetMap contributors (ODbL).
+
+### Examples
+
+[Examples](docs/examples.md) has six worked examples with pictures, each
+showing the layer you make and what it does to a route: a footbridge, a
+closed street, a network from six lines, a one-way street, a banned
+turn and a bollard. One of them:
+
+![Driving route from A to B before and after a boulevard is closed: the route moves to the quay road](docs/images/example-closed-street.png)
+
+Coming from ArcGIS? [Moving an ArcGIS street network to QGIS](docs/migrating-from-arcgis.md)
+shows how to bring a network dataset's streets over.
 
 ### What people use it for
 

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- New guide: [Moving an ArcGIS street network to QGIS](docs/migrating-from-arcgis.md).
+- New page of [worked examples](docs/examples.md) with pictures: routes
+  drawn by Valhalla on networks built with the plugin.
+- The README shows the current forms of both build tools.
+
 ## 0.4.0 - 2026-10-07
 
 - The plugin now uses NetworkForge engine v1.0.0 (was v0.12.0), the

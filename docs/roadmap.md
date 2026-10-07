@@ -173,8 +173,13 @@ plugin (it has no network logic).
       as a points layer (engine v1.0.0).
 - [x] **New ferries** (engine v1.0.0).
 - [ ] **Elevation fields** (`F_ZLEV`, `T_ZLEV`) of data prepared for
-      ArcGIS: such data has to be given `bridge` / `layer` first. The one
-      part of moving an ArcGIS network over that isn't renaming fields.
+      ArcGIS. The engine joins lines that share a vertex whatever
+      their `layer`, so a bridge that is cut where it crosses a street
+      becomes a crossroads: its pieces have to be merged and the vertex
+      at the crossing deleted by hand first
+      (see [the ArcGIS guide](migrating-from-arcgis.md), step 3). The one
+      part of moving an ArcGIS network over that isn't a field
+      calculation, and the main engine change worth making for it.
 - [ ] **Public transport**: out of scope for now.
 
 ## Things not planned
