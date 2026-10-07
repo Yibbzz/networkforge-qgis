@@ -324,8 +324,10 @@ def from_lonlat(crs, geometry):
 
 # ----------------------------------------- a network of your own lines
 
-GRID_CRS = QgsCoordinateReferenceSystem("EPSG:27700")   # metres
-EAST, NORTH = 451000, 206000
+# In metres. A WGS 84 UTM zone, so QGIS never has to ask which datum
+# transformation to use when it shows the layers on a web map.
+GRID_CRS = QgsCoordinateReferenceSystem("EPSG:32630")
+EAST, NORTH = 451000, 5706000
 
 
 def at(x, y):

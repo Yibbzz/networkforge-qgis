@@ -62,125 +62,106 @@ proves it.
 
 ## Next steps
 
-Do these in order. Each one ends with something you can show.
+The tools do what the goal asks: new lines, changed and removed
+streets, turn restrictions, points, ferries and standalone networks,
+each tested with Valhalla through the Network Analyst plugin. What is
+left is proving it in real use and getting it to people. Do these in
+order.
 
-### 1. Prove the two plugins work together
+### 1. Use it on a screen
 
-A first check without QGIS passed on 2026-10-02: a before and after PBF
-from the engine (the test street grid plus a diagonal cycleway) were
-built into Valhalla graphs with `pyvalhalla` 3.9.0. The cycling route
-corner to corner dropped from 606 m to 429 m; walking and driving
-stayed at 606 m, as they should for a cycleway.
+Everything so far was tested without a screen, on networks of a few
+streets.
 
-**Checked in the Network Analyst plugin itself since 2026-10-06**, by
-the automated tests in `tests/test_network_analyst.py`. They build the
-networks with this plugin's tools, build a Valhalla graph from each PBF,
-start Valhalla on the computer and run the Network Analyst plugin's own
-Processing tools against it. They run on every push, on QGIS 3 (LTR)
-with their plugin 6.1.0 and on QGIS 4 with their plugin 7.1.0, and once
-a week against the newest commit of their plugin and the newest
-`pyvalhalla` (workflow "Network Analyst (newest)").
+- [ ] Work through the [hands-on checklist](../manual-test/README.md),
+      parts 1 to 6, with the data in `manual-test/`. About an hour.
+- [ ] Fix what it turns up: confusing labels, unclear messages, styling.
 
-- [x] New lines: a cycleway shortens the cycling route only; a road
-      shortens the drive.
-- [x] Changes to existing streets: removed, closed to everyone, closed
-      to motor traffic, made one-way, given a lower speed limit.
-- [x] A banned turn, in OpenStreetMap and in a standalone network.
-- [x] A bollard (cars go round, bikes and walkers pass) and a ferry.
-- [x] Standalone networks: joined at crossings or at vertices only,
-      bridges, one-way streets.
-- [x] Their walking isochrone runs on the after network.
+### 2. Click through the Network Analyst plugin once
 
-Still to do by hand, once, on a computer with a screen:
+- [ ] Checklist part 7: install their plugin and `pyvalhalla`, build a
+      graph from `after.osm.pbf` with their own button, and route on it.
+      The automated tests run the same Valhalla programs directly, but
+      can't click that button.
 
-- [ ] In the Network Analyst plugin's settings, install `pyvalhalla` and
-      build a graph from `after.osm.pbf` with its own button. The tests
-      can't click it; they run the same programs (`valhalla_build_tiles`,
-      `valhalla_service`) directly.
-- [ ] Do it on a real area (the Monaco footbridge from the README).
+### 3. Test on Windows
 
-Found on the way: run from Python or `qgis_process`, the Network Analyst
-plugin's tools refuse their own defaults for drop-down settings
-("Incorrect parameter value for INPUT_MODE"), so those must be given.
-Worth reporting to routing.earth.
+- [ ] Checklist part 8. Most users are on Windows, and it was last tried
+      with plugin 0.1.x and engine v0.5.0. The engine install is the
+      part most likely to differ.
 
-Everything below depends on this. If it fails, the fix belongs in the
-engine, not in this plugin.
-
-### 2. Check the Esri examples, as automated tests in the engine
-
-**Done in engine v0.6.0** (`tests/valhalla`, GitHub job "PBF in
-Valhalla", with a pinned `pyvalhalla`). The plan was:
-
-Add a Valhalla job to the engine's GitHub tests (`pyvalhalla` installs
-with pip, no server or Docker needed): build a before and after PBF for
-each case below, build both graphs, and compare routes. That is where
-these checks belong, because the engine writes the PBF; this plugin
-only passes files along. Pin the `pyvalhalla` version so a Valhalla
-change can't break the tests unannounced.
-
-One line of each kind, with Valhalla treating it correctly:
-
-- [x] a one-way street (`oneway=yes`): routes only go one way
-- [x] a path closed to cars (`highway=footway`): walking uses it,
-      driving does not
-- [x] a low bridge (`maxheight`): a bus or truck goes around, a car
-      does not
-- [x] an unpaved road (`surface`): avoided when asked
-- [x] a bridge over an existing road (`bridge=yes`, `layer=1`): crosses
-      it without joining it
-
-### 3. Add a short "Routing with Valhalla" section to the README
-
-- [ ] Steps to load the two PBF files into the Network Analyst plugin.
-- [ ] One before and after picture made with Valhalla.
-
-### 4. Offer the tutorial to routing.earth
+### 4. Tell routing.earth
 
 - [ ] Comment on
       [issue #13](https://github.com/routing-earth/qgis-network-analyst-tutorial-challenge/issues/13)
-      of their tutorial challenge with the before and after picture.
+      of their tutorial challenge with a before and after picture
+      (`docs/images/example-footbridge.png`).
 - [ ] Ask two things: whether a tutorial that uses a second plugin
       (NetworkForge) is welcome, and what format they want.
-- [ ] Their rules: the tutorial must be written by a person, not by AI,
-      and should not copy Esri's steps one by one.
+- [ ] Report what the tests found: run from Python or `qgis_process`,
+      their tools refuse their own defaults for drop-down settings
+      ("Incorrect parameter value for INPUT_MODE").
 
 ### 5. Write the tutorial
 
+- [ ] Their rules: written by a person, not by AI, and not a copy of
+      Esri's steps one by one.
 - [ ] Start from a planning question ("what does this new link
       change?"), not from settings.
-- [ ] Cover the Esri examples from step 2 that worked.
+- [ ] The [examples](examples.md), [use cases](use-cases.md) and
+      [ArcGIS guide](migrating-from-arcgis.md) are material to draw on.
 - [ ] Keep a copy in this repo's `docs/` as the main user guide.
 
-### 6. Close the gaps with Esri
+### 6. Publish on plugins.qgis.org
 
-Changes for the engine, most useful first. None of these belong in this
-plugin (it has no network logic).
+- [ ] Make an OSGeo account and set the repository secrets
+      `OSGEO_USERNAME` and `OSGEO_PASSWORD`; the release workflow does
+      the rest on the next version tag.
+- [ ] Until then, users add this repository's URL to QGIS by hand.
+- [ ] Keep "experimental" until steps 1 to 3 are done and a few people
+      outside the project have used it.
 
-- [x] **Closing or changing existing streets**, not only adding lines:
-      engine v0.7.0 (change) and v0.8.0 (remove). A feature with an
-      OpenStreetMap way id changes that street; `remove` = `yes` takes
-      it out. The plugin draws changed streets in orange.
-- [x] **A network from your own data alone**, as Esri's tutorial does:
-      engine v0.10.0, "Build standalone network" in this plugin.
-- [x] **Turn restrictions**: those in OpenStreetMap are kept in the PBF
-      since engine v0.6.0. Since engine v0.12.0 you can draw your own, as
-      a short line through a junction with a `restriction` field, as
-      ArcGIS does with a turn feature class, also through a stretch of
-      street between two junctions (engine v1.0.0). Not covered: turn
-      penalties in seconds (Valhalla works out turn delays itself).
-- [x] **Points on the network**: barriers, gates, signals and crossings,
-      as a points layer (engine v1.0.0).
-- [x] **New ferries** (engine v1.0.0).
+### Later, in the engine
+
+None of these belong in this plugin (it has no network logic), and none
+blocks the steps above.
+
 - [ ] **Elevation fields** (`F_ZLEV`, `T_ZLEV`) of data prepared for
-      ArcGIS. The engine joins lines that share a vertex whatever
-      their `layer`, so a bridge that is cut where it crosses a street
-      becomes a crossroads: its pieces have to be merged and the vertex
-      at the crossing deleted by hand first
-      (see [the ArcGIS guide](migrating-from-arcgis.md), step 3). The one
-      part of moving an ArcGIS network over that isn't a field
-      calculation, and the main engine change worth making for it.
+      ArcGIS. The engine joins lines that share a vertex whatever their
+      `layer`, so a bridge that is cut where it crosses a street becomes
+      a crossroads: its pieces have to be merged and the vertex at the
+      crossing deleted by hand first (see
+      [the ArcGIS guide](migrating-from-arcgis.md), step 3). The main
+      engine change worth making for ArcGIS data.
+- [ ] **A bridge with a vertex exactly on the street below** is joined
+      to it when lines join "wherever they cross", although it is tagged
+      as a bridge. It stays apart only without a vertex there.
+- [ ] **A separate input for points** with ids of their own, so the
+      plugin need not renumber points from 1,000,000.
 - [ ] **Public transport**: out of scope for now.
+
+## Done
+
+- [x] **The two plugins work together** (2026-10-06): automated tests
+      build networks with this plugin and route on them with the Network
+      Analyst plugin's own tools, on every push, on QGIS 3 (LTR) with
+      their plugin 6.1.0 and on QGIS 4 with 7.1.0, and weekly against
+      their newest version. See "Tested with the Network Analyst plugin"
+      in the README.
+- [x] **Esri's examples as automated tests** in the engine (v0.6.0,
+      `tests/valhalla`): one-way streets, paths closed to cars, low
+      bridges, unpaved roads, bridges that cross without joining.
+- [x] **Changing and removing existing streets** (engine v0.7.0 and
+      v0.8.0); the plugin draws changed streets in orange.
+- [x] **A network from your own data alone** (engine v0.10.0, "Build
+      standalone network").
+- [x] **Turn restrictions** drawn as lines through a junction, also
+      through a stretch of street (engine v0.12.0 and v1.0.0).
+- [x] **Points on the network**: barriers, signals and crossings, as a
+      points layer (engine v1.0.0).
+- [x] **New ferries** (engine v1.0.0).
+- [x] **Examples and guides**: [examples](examples.md) with pictures,
+      [use cases](use-cases.md), [moving from ArcGIS](migrating-from-arcgis.md).
 
 ## Things not planned
 

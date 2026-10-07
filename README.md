@@ -308,6 +308,14 @@ Valhalla on your own computer. To skip them:
 GitHub runs all of them on every push, in the official QGIS Docker
 image, for both the long-term release and the latest QGIS.
 
+### Testing by hand
+
+[`manual-test/`](manual-test/README.md) has a checklist for what the
+automated tests can't see (the forms, the styling, drawing your own
+lines, the Network Analyst plugin's own windows, Windows), with a QGIS
+project and ready-made data. `scripts/make_test_data.py` makes the data
+and prints what each test should report.
+
 ## Releasing
 
 Pushing a version tag such as `v0.1.0` runs `.github/workflows/release.yml`:

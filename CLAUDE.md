@@ -348,6 +348,14 @@ networkforge-qgis/
   running off-screen (`docs/images/*-form.png`). Rerun it whenever a
   tool's parameters or help text change.
 
+## Hands-on testing
+- `manual-test/` holds the checklist a person works through in QGIS
+  (`README.md`), a project (`manual-test.qgz`), the layers
+  (`test-data.gpkg`) and a Monaco extract. `scripts/make_test_data.py`
+  makes them and prints the log lines each test should show; when a
+  tool's messages or the engine's counts change, rerun it and update the
+  expected lines in the checklist by hand.
+
 ## Packaging
 - `qgis-plugin-ci` builds the zip from `metadata.txt` and publishes to
   plugins.qgis.org on a version tag (needs an OSGeo account). Start as
