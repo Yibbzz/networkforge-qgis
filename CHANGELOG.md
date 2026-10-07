@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.4.0 - 2026-10-07
+
+- The plugin now uses NetworkForge engine v1.0.0 (was v0.12.0), the
+  engine's first stable release; the first tool you run replaces the
+  installed engine.
+- New optional **points layer** in all three tools: bollards, gates,
+  traffic signals and crossings, as points with OpenStreetMap's fields
+  (`barrier` = `bollard`, `highway` = `traffic_signals`, ...). A point on
+  a junction tags it; elsewhere the street is cut there. In "Build
+  scenario network" a points layer is enough by itself. Problems with a
+  point select it in the points layer.
+- From the engine: new ferries (`route` = `ferry`); deleting tags from an
+  existing street (`remove_tags`); turn restrictions through a stretch
+  of street between two junctions; warnings for misspelt values such as
+  `surface` = `asphault`; fixes for multi-part lines.
+
 - The PBF files are now tested with routing.earth's QGIS Network Analyst
   plugin on every change: new lines, removed and closed streets, one-way
   streets, speed limits, banned turns and standalone networks are built,

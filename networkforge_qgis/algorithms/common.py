@@ -9,6 +9,7 @@ import os
 import re
 
 from qgis.core import (
+    QgsCoordinateTransform,
     QgsFeature,
     QgsFeatureRequest,
     QgsFeatureSink,
@@ -68,12 +69,44 @@ def turn_restrictions_help():
     )
 
 
-def error_text(error, code):
+def more_features_help(existing_streets=True):
+    """The paragraph on ferries and (with OpenStreetMap) deleting tags."""
+    info = engine.bundled_info()
+    text = (
+        "<b>Ferries</b>: a line with a field called route set to "
+        f"{info['tag_values']['route'][0]}, and no kind of street, is a ferry. "
+        "It joins the streets at its two ends only; a duration field "
+        "(hh:mm) sets the crossing time."
+    )
+    if existing_streets:
+        text += (
+            " <b>Deleting a tag</b>: on a feature with an OpenStreetMap "
+            f"id, a field called {info['remove_tags_field']} lists tags to "
+            "take off the street, separated by semicolons (for example "
+            "maxspeed;motor_vehicle)."
+        )
+    return text
+
+
+POINTS_HELP = (
+    "<b>Points layer</b> (optional): barriers, traffic signals and "
+    "crossings. Each point needs the fields of an OpenStreetMap node, "
+    "for example barrier = bollard, or highway = traffic_signals, or "
+    "highway = crossing with crossing = zebra. A point on a junction "
+    "tags that junction; anywhere else the street under it is cut there. "
+    "Routers such as Valhalla obey them (a bollard stops cars, not "
+    "walkers or bikes); QGIS's own network tools don't."
+)
+
+
+def error_text(error, code, describe=None):
     """What to tell the user when the engine failed.
 
     `error` is the engine's error event ({} if it sent none) and `code`
-    its exit code.
+    its exit code. `describe` turns the id of a feature into the words
+    for it ("feature 3"), where ids need explaining.
     """
+    describe = describe or (lambda feature: f"feature {feature}")
     if not error:
         return (
             f"The engine stopped unexpectedly (exit code {code}). "
@@ -88,7 +121,7 @@ def error_text(error, code):
         if issue.get("feature") is None:
             lines.append(f"  - {issue['message']}")
         else:
-            lines.append(f"  - feature {issue['feature']}: {issue['message']}")
+            lines.append(f"  - {describe(issue['feature'])}: {issue['message']}")
     if error.get("guide"):
         lines.append(f"How to fix this: {engine.guide_url(error['guide'])}")
     return "\n".join(lines)
@@ -128,14 +161,28 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
     OVERWRITE = "OVERWRITE"
     NETWORK_TYPE = "NETWORK_TYPE"
     SNAP_TOLERANCE = "SNAP_TOLERANCE"
+    POINTS = "POINTS"
 
-    def add_custom_parameters(self, info, label="Custom network layer"):
-        """The layer and how its lines are travelled."""
+    def add_custom_parameters(self, info, label="Custom network layer",
+                              lines_optional=False):
+        """The layers and how their lines are travelled.
+
+        With `lines_optional` the line layer may be left out when there is
+        a points layer (signals on existing junctions need no lines).
+        """
         self._presets = list(info["presets"])
         self._network_types = list(info["network_types"])
+        self._lines_optional = lines_optional
         self.addParameter(
             QgsProcessingParameterFeatureSource(
-                self.CUSTOM, label, [compat.SOURCE_VECTOR_LINE]
+                self.CUSTOM, label, [compat.SOURCE_VECTOR_LINE],
+                optional=lines_optional,
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterFeatureSource(
+                self.POINTS, "Points layer: barriers, signals, crossings",
+                [compat.SOURCE_VECTOR_POINT], optional=True,
             )
         )
         preset_labels = [FEATURE_ATTRIBUTES] + [
@@ -210,16 +257,19 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
                 f"Other tags: \"{err}\" should look like key=value. Separate "
                 "several with semicolons, e.g. lanes=2; bicycle=no"
             )
+        if (getattr(self, "_lines_optional", False)
+                and not parameters.get(self.CUSTOM) and not parameters.get(self.POINTS)):
+            return False, "Choose a custom network layer, a points layer, or both."
         return super().checkParameterValues(parameters, context)
 
     def prepareAlgorithm(self, parameters, context, feedback):
         # Runs on the main thread, before the work starts on another one.
-        self._selector = None
-        self._layer_name = None
-        layer = self.parameterAsVectorLayer(parameters, self.CUSTOM, context)
-        if layer is not None and QgsProject.instance().mapLayer(layer.id()) is not None:
-            self._selector = FeatureSelector(layer.id())
-            self._layer_name = layer.name()
+        self._selectors = {}
+        self._point_base = None
+        for role in (self.CUSTOM, self.POINTS):
+            layer = self.parameterAsVectorLayer(parameters, role, context)
+            if layer is not None and QgsProject.instance().mapLayer(layer.id()) is not None:
+                self._selectors[role] = (FeatureSelector(layer.id()), layer.name())
         return True
 
     def ensure_engine(self, feedback):
@@ -233,47 +283,103 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
         return True
 
     def export_custom(self, parameters, context, feedback):
-        """Write the chosen lines to a temporary GeoPackage for the engine."""
-        source = self.parameterAsSource(parameters, self.CUSTOM, context)
-        if source is None:
+        """Write the chosen lines and points to a temporary GeoPackage for the engine.
+
+        The engine reads one layer, so lines and points go into it
+        together. Each feature carries its QGIS id in ID_FIELD; a point's
+        is raised by a round number (self._point_base) so that it can't be
+        mistaken for a line's.
+        """
+        lines = self.parameterAsSource(parameters, self.CUSTOM, context)
+        points = self.parameterAsSource(parameters, self.POINTS, context)
+        if lines is None and (points is None or not self._lines_optional):
             raise QgsProcessingException(
                 self.invalidSourceError(parameters, self.CUSTOM)
             )
+        sources = [source for source in (lines, points) if source is not None]
+
         # A field called "fid" would clash with the GeoPackage's own ids.
-        kept = [i for i, field in enumerate(source.fields())
-                if field.name().lower() not in ("fid", ID_FIELD)]
         fields = QgsFields()
-        for i in kept:
-            fields.append(source.fields().at(i))
+        for source in sources:
+            for field in source.fields():
+                if (field.name().lower() not in ("fid", ID_FIELD)
+                        and fields.indexOf(field.name()) < 0):
+                    fields.append(field)
         fields.append(compat.whole_number_field(ID_FIELD))
+
+        if points is not None:
+            ids_only = QgsFeatureRequest().setNoAttributes()
+            ids = [feature.id() for source in sources
+                   for feature in source.getFeatures(ids_only, compat.SKIP_GEOMETRY_CHECKS)]
+            largest = max((abs(i) for i in ids), default=0)
+            self._point_base = 10 ** max(6, len(str(largest)) + 1)
 
         path = QgsProcessingUtils.generateTempFilename("nf_custom.gpkg", context)
         sink, _ = QgsProcessingUtils.createFeatureSink(
-            path, context, fields, source.wkbType(), source.sourceCrs()
+            path, context, fields,
+            lines.wkbType() if points is None else compat.ANY_GEOMETRY,
+            sources[0].sourceCrs(),
         )
-        count = 0
-        # Geometry problems are the engine's to report, with feature ids.
-        for feature in source.getFeatures(QgsFeatureRequest(), compat.SKIP_GEOMETRY_CHECKS):
-            if feedback.isCanceled():
-                break
-            out = QgsFeature(fields)
-            out.setGeometry(feature.geometry())
-            values = feature.attributes()
-            out.setAttributes([values[i] for i in kept] + [feature.id()])
-            if not sink.addFeature(out, QgsFeatureSink.FastInsert):
-                raise QgsProcessingException(
-                    f"Could not prepare feature {feature.id()} for the engine: "
-                    f"{sink.lastError()}"
-                )
-            count += 1
+        counts = []
+        for source in sources:
+            is_point = source is points
+            names = [field.name() for field in source.fields()]
+            transform = None
+            if source.sourceCrs() != sources[0].sourceCrs():
+                transform = QgsCoordinateTransform(
+                    source.sourceCrs(), sources[0].sourceCrs(), context.transformContext())
+            count = 0
+            # Geometry problems are the engine's to report, with feature ids.
+            for feature in source.getFeatures(QgsFeatureRequest(), compat.SKIP_GEOMETRY_CHECKS):
+                if feedback.isCanceled():
+                    break
+                out = QgsFeature(fields)
+                geometry = feature.geometry()
+                if transform is not None:
+                    geometry.transform(transform)
+                out.setGeometry(geometry)
+                for name, value in zip(names, feature.attributes()):
+                    if name != ID_FIELD and fields.indexOf(name) >= 0:
+                        out[name] = value
+                out[ID_FIELD] = self._export_id(feature.id(), is_point)
+                if not sink.addFeature(out, QgsFeatureSink.FastInsert):
+                    raise QgsProcessingException(
+                        f"Could not prepare feature {feature.id()} for the engine: "
+                        f"{sink.lastError()}"
+                    )
+                count += 1
+            counts.append(count)
         del sink  # closes the file so the engine can read it
-        if count == 0:
+        if sum(counts) == 0:
             raise QgsProcessingException(
                 "The custom network layer has no features to use. If "
                 "\"Selected features only\" is ticked, select some first."
             )
-        feedback.pushInfo(f"Custom lines: {count}")
+        if lines is not None:
+            feedback.pushInfo(f"Custom lines: {counts[0]}")
+        if points is not None:
+            feedback.pushInfo(f"Custom points: {counts[-1]}")
         return path
+
+    def _export_id(self, feature_id, is_point):
+        """The id a feature is given in the exported file."""
+        if not is_point:
+            return feature_id
+        # A point not saved yet has a negative id.
+        return self._point_base * (1 if feature_id >= 0 else 2) + abs(feature_id)
+
+    def _source_of(self, export_id):
+        """(layer role, QGIS feature id) of an id from the exported file."""
+        base = self._point_base
+        if base is None or not isinstance(export_id, int) or abs(export_id) < base:
+            return self.CUSTOM, export_id
+        if export_id >= 2 * base:
+            return self.POINTS, -(export_id - 2 * base)
+        return self.POINTS, export_id - base
+
+    def _describe(self, export_id):
+        role, feature_id = self._source_of(export_id)
+        return f"point {feature_id}" if role == self.POINTS else f"feature {feature_id}"
 
     def custom_args(self, parameters, context, custom_file):
         """The engine options for the custom layer and its travel type."""
@@ -336,7 +442,13 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
                 feedback.setProgressText(event["message"])
             elif kind == "warning":
                 feedback.pushWarning(event["message"])
-                warned.extend(event.get("features") or [])
+                features = event.get("features") or []
+                warned.extend(features)
+                if any(self._source_of(f)[0] == self.POINTS for f in features):
+                    feedback.pushWarning(
+                        f"(Numbers from {self._point_base:,} are points: take "
+                        f"{self._point_base:,} off for the point's id.)"
+                    )
             elif kind == "done":
                 done.update(event)
             elif kind == "error":
@@ -350,7 +462,7 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException(str(err))
 
         if error or code != 0:
-            text = error_text(error, code)
+            text = error_text(error, code, self._describe)
             broken = [issue["feature"] for issue in error.get("issues") or []
                       if issue.get("feature") is not None]
             note = self._select(broken)
@@ -363,20 +475,32 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
         return done
 
     @staticmethod
-    def report_turn_restrictions(done, feedback, file_name):
-        """Say how many turn restrictions were made, and where they are."""
+    def report_additions(done, feedback, file_name):
+        """Say how many turn restrictions and points were made, and where they are."""
         count = done.get("turn_restrictions", 0)
         if count:
             feedback.pushInfo(
                 f"Turn restrictions added: {count:,}. They are in {file_name} "
                 "for routers; the QGIS layers can't show them."
             )
+        count = done.get("tagged_nodes", 0)
+        if count:
+            feedback.pushInfo(
+                f"Points put on the network: {count:,}. They are in {file_name} "
+                "for routers, and in the \"nodes\" layer of the GeoPackage."
+            )
 
-    def _select(self, feature_ids):
-        """Select the features in the custom layer; returns a note for the user."""
-        ids = sorted({i for i in feature_ids if isinstance(i, int)})
-        if not ids or self._selector is None:
-            return ""
-        self._selector.select(ids)
-        count = "feature concerned is" if len(ids) == 1 else f"{len(ids)} features concerned are"
-        return f"The {count} now selected in \"{self._layer_name}\"."
+    def _select(self, export_ids):
+        """Select the features in their layers; returns a note for the user."""
+        notes = []
+        for role, noun in ((self.CUSTOM, "feature"), (self.POINTS, "point")):
+            ids = sorted({feature_id for source, feature_id in map(self._source_of, export_ids)
+                          if source == role and isinstance(feature_id, int)})
+            if not ids or role not in self._selectors:
+                continue
+            selector, layer_name = self._selectors[role]
+            selector.select(ids)
+            count = (f"{noun} concerned is" if len(ids) == 1
+                     else f"{len(ids)} {noun}s concerned are")
+            notes.append(f"The {count} now selected in \"{layer_name}\".")
+        return "\n".join(notes)

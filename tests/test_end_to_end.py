@@ -289,3 +289,84 @@ def test_standalone_network_takes_turn_restrictions_and_check_counts_them(
     assert any(info.startswith("Turn restrictions added: 1. They are in network.osm.pbf")
                for info in feedback.infos)
     assert QgsVectorLayer(results["NETWORK"], "network", "ogr").featureCount() == 4
+
+
+def point_layer(*points, fields=("barrier",)):
+    """A project layer of (x, y, *values of `fields`) points."""
+    spec = "".join(f"&field={name}:string" for name in fields)
+    layer = QgsVectorLayer(f"Point?crs=EPSG:4326{spec}", "points", "memory")
+    features = []
+    for x, y, *values in points:
+        feature = QgsFeature(layer.fields())
+        feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
+        feature.setAttributes(values)
+        features.append(feature)
+    layer.dataProvider().addFeatures(features)
+    QgsProject.instance().addMapLayer(layer)
+    return layer
+
+
+def test_build_puts_points_on_the_network_without_any_lines(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    # A bollard half-way along a block, and signals on a junction.
+    points = point_layer((-3.6982, 40.4000, "bollard", None),
+                         (-3.6988, 40.4009, None, "traffic_signals"),
+                         fields=("barrier", "highway"))
+
+    results = processing.run("networkforge:build_network", {
+        "EXTENT": EXTENT, "POINTS": points, "OSM_FILE": str(GRID),
+        "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+
+    assert any(info.startswith("Points put on the network: 2.") for info in feedback.infos)
+    nodes = QgsVectorLayer(results["AFTER"].replace("layername=edges", "layername=nodes"),
+                           "nodes", "ogr")
+    assert nodes.isValid()
+    assert "bollard" in {f["barrier"] for f in nodes.getFeatures()}
+    # The bollard cut its block in two.
+    assert QgsVectorLayer(results["AFTER"], "after", "ogr").featureCount() == 25
+    assert not feedback.warnings
+
+
+def test_a_point_that_is_not_on_a_street_is_named_and_selected(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    plan = line_layer(("cycleway", None, DIAGONAL))
+    points = point_layer((-3.6982, 40.4000, "bollard"), (-3.6952, 40.4040, "bollard"))
+    on_street, in_the_fields = sorted(f.id() for f in points.getFeatures())
+
+    try:
+        processing.run("networkforge:build_network", {
+            "EXTENT": EXTENT, "CUSTOM": plan, "POINTS": points, "OSM_FILE": str(GRID),
+            "OUTPUT_FOLDER": str(tmp_path / "out"),
+        }, feedback=feedback)
+        said = "\n".join(feedback.warnings)
+    except QgsProcessingException as error:
+        said = str(error)
+
+    assert points.selectedFeatureIds() == [in_the_fields]
+    assert f'The point concerned is now selected in "{points.name()}".' in said
+    assert not plan.selectedFeatureIds()
+
+
+def test_check_and_build_accept_a_ferry_and_a_deleted_tag(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    # A ferry corner to corner, and row 0 (way 1001) loses its speed limit.
+    plan = line_layer(
+        (None, None, DIAGONAL, "ferry", "00:05", None, None),
+        (None, None, [(-3.7000, 40.4000), (-3.6964, 40.4000)], None, None, "1001", "maxspeed"),
+        extra_fields=("route", "duration", "osm_id", "remove_tags"),
+    )
+
+    checked = processing.run("networkforge:check_layer", {"CUSTOM": plan}, feedback=feedback)
+    assert checked["FEATURES"] == 2
+
+    results = processing.run("networkforge:build_network", {
+        "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(GRID),
+        "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+
+    after = QgsVectorLayer(results["AFTER"], "after", "ogr")
+    ferries = [f for f in after.getFeatures() if f["route"] == "ferry"]
+    assert len(ferries) == 1 and ferries[0]["custom"] == "yes"
+    row_0 = [f for f in after.getFeatures() if f["osmid"] == 1001]
+    assert row_0 and all(f["modified"] == "yes" and not f["maxspeed"] for f in row_0)

@@ -18,7 +18,12 @@ from qgis.core import (
 )
 
 from .. import engine, styling
-from .common import CustomNetworkAlgorithm, turn_restrictions_help
+from .common import (
+    POINTS_HELP,
+    CustomNetworkAlgorithm,
+    more_features_help,
+    turn_restrictions_help,
+)
 
 WGS84 = "EPSG:4326"
 
@@ -63,6 +68,9 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             f"<a href=\"{engine.guide_url('changing-existing-streets')}\">"
             "Guide</a>.\n\n"
             f"{turn_restrictions_help()}\n\n"
+            f"{POINTS_HELP} With a points layer the line layer may be left "
+            "empty.\n\n"
+            f"{more_features_help()}\n\n"
             "<b>OpenStreetMap data</b>: downloaded for the extent unless you "
             f"give a local OSM file, which is required above {limit:,} km2.\n\n"
             "<b>Results</b>: the before and after layers are added to the "
@@ -85,7 +93,7 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             " ".join("*" + suffix for suffix in info["osm_formats"])
         )
         self.addParameter(QgsProcessingParameterExtent(self.EXTENT, "Area"))
-        self.add_custom_parameters(info)
+        self.add_custom_parameters(info, lines_optional=True)
         self.addParameter(
             QgsProcessingParameterFile(
                 self.OSM_FILE,
@@ -153,7 +161,7 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
                 f"Street segments removed: {removed:,}. They are in the "
                 "Before network only."
             )
-        self.report_turn_restrictions(done, feedback, "after.osm.pbf")
+        self.report_additions(done, feedback, "after.osm.pbf")
         feedback.pushInfo(f"Done. Files are in {folder}")
         feedback.pushInfo(f"Map data {styling.OSM_CREDIT}")
 

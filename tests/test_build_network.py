@@ -395,3 +395,87 @@ def test_selection_works_when_run_in_the_background_like_the_toolbox_does(
 
     assert finished == [True]
     assert lines.selectedFeatureIds() == [third]
+
+
+# ------------------------------------------------------------ points layer
+
+@pytest.fixture
+def barriers(lines):
+    """Two points in the project: a bollard and a set of traffic signals."""
+    layer = QgsVectorLayer(
+        "Point?crs=EPSG:4326&field=barrier:string&field=highway:string", "barriers", "memory")
+    features = []
+    for i, (barrier, highway) in enumerate([("bollard", None), (None, "traffic_signals")]):
+        feature = QgsFeature(layer.fields())
+        feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(-3.69 + i / 100, 40.41)))
+        feature.setAttributes([barrier, highway])
+        features.append(feature)
+    layer.dataProvider().addFeatures(features)
+    QgsProject.instance().addMapLayer(layer)
+    return layer
+
+
+def test_points_are_exported_with_the_lines_under_ids_of_their_own(
+        build, fake_engine, lines, barriers, feedback):
+    build(POINTS=barriers)
+
+    layer = exported(fake_engine)
+    names = [field.name() for field in layer.fields()]
+    assert "barrier" in names and names.count("highway") == 1
+    features = list(layer.getFeatures())
+    exported_points = [f for f in features if f.geometry().asWkt().startswith("Point")]
+    exported_lines = [f for f in features if f not in exported_points]
+    assert len(exported_lines) == 3 and len(exported_points) == 2
+    # Lines keep their QGIS ids; points get theirs plus a round number.
+    assert sorted(f[ID_FIELD] for f in exported_lines) == sorted(
+        f.id() for f in lines.getFeatures())
+    assert sorted(f[ID_FIELD] for f in exported_points) == sorted(
+        1_000_000 + f.id() for f in barriers.getFeatures())
+    assert sorted(f["barrier"] or "" for f in exported_points) == ["", "bollard"]
+    assert sorted(f["highway"] or "" for f in exported_points) == ["", "traffic_signals"]
+    assert "Custom lines: 3" in feedback.infos and "Custom points: 2" in feedback.infos
+
+
+def test_points_alone_are_enough(build, fake_engine, barriers, feedback):
+    build(CUSTOM=None, POINTS=barriers)
+
+    assert exported(fake_engine).featureCount() == 2
+    assert "Custom points: 2" in feedback.infos
+
+
+def test_neither_lines_nor_points_is_refused(build):
+    with pytest.raises(QgsProcessingException, match="points layer, or both"):
+        build(CUSTOM=None)
+
+
+def test_points_put_on_the_network_are_reported(build, fake_engine, barriers, feedback):
+    fake_engine.play([dict(DONE, tagged_nodes=2)])
+
+    build(POINTS=barriers)
+
+    assert ('Points put on the network: 2. They are in after.osm.pbf for routers, '
+            'and in the "nodes" layer of the GeoPackage.') in feedback.infos
+
+
+def test_problems_with_points_select_the_points_and_name_them(
+        build, fake_engine, lines, barriers, feedback):
+    line = sorted(f.id() for f in lines.getFeatures())[0]
+    point = sorted(f.id() for f in barriers.getFeatures())[1]
+    fake_engine.play([
+        {"event": "warning", "message": "Not on a street", "features": [1_000_000 + point]},
+        {"event": "error", "type": "InvalidTagsError", "message": "2 problem(s):\n  - ...",
+         "issues": [{"feature": line, "message": "no highway tag"},
+                    {"feature": 1_000_000 + point, "message": "barrier='wall' is unknown"}]},
+    ], exit_code=3)
+
+    with pytest.raises(QgsProcessingException) as raised:
+        build(POINTS=barriers)
+
+    text = str(raised.value)
+    assert f"  - feature {line}: no highway tag" in text
+    assert f"  - point {point}: barrier='wall' is unknown" in text
+    assert 'The feature concerned is now selected in "plan".' in text
+    assert 'The point concerned is now selected in "barriers".' in text
+    assert lines.selectedFeatureIds() == [line]
+    assert barriers.selectedFeatureIds() == [point]
+    assert any("take 1,000,000 off" in warning for warning in feedback.warnings)

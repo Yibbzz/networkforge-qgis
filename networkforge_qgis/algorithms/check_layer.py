@@ -37,7 +37,8 @@ class CheckLayerAlgorithm(CustomNetworkAlgorithm):
             "problems and a link to the guide for fixing them, and the "
             "features concerned are selected in the layer. If all is well, "
             "it says how many lines each kind of traveller can use, and "
-            "how many change existing streets or are turn restrictions. "
+            "how many change existing streets, are turn restrictions or are "
+            "points (barriers, signals, crossings). "
             "Whether a turn restriction sits on a junction is only known "
             "when the network is built.\n\n"
             "<b>Area</b> is optional: give the area you will build for to "
@@ -48,7 +49,7 @@ class CheckLayerAlgorithm(CustomNetworkAlgorithm):
         return CheckLayerAlgorithm()
 
     def initAlgorithm(self, config=None):
-        self.add_custom_parameters(engine.bundled_info())
+        self.add_custom_parameters(engine.bundled_info(), lines_optional=True)
         self.addParameter(
             QgsProcessingParameterExtent(self.EXTENT, "Area", optional=True)
         )
@@ -73,11 +74,12 @@ class CheckLayerAlgorithm(CustomNetworkAlgorithm):
         if done is None:
             return {}
 
-        feedback.pushInfo(f"No problems found in {done.get('features', 0)} line(s).")
+        feedback.pushInfo(f"No problems found in {done.get('features', 0)} feature(s).")
         for modes, count in (done.get("modes") or {}).items():
             feedback.pushInfo(f"  {count} usable by: {modes}")
         for key, label in (("edits", "change existing streets"),
-                           ("turn_restrictions", "turn restriction(s)")):
+                           ("turn_restrictions", "turn restriction(s)"),
+                           ("points", "point(s): barriers, signals, crossings")):
             if done.get(key):
                 feedback.pushInfo(f"  {done[key]} {label}")
         return {self.FEATURES: done.get("features")}

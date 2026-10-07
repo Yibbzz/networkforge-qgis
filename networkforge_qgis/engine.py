@@ -26,7 +26,7 @@ from qgis.PyQt.QtNetwork import QNetworkRequest
 
 # The engine's CLI flags, JSON events and exit codes are the contract, so
 # the version is pinned here and nowhere else.
-ENGINE_VERSION = "0.12.0"
+ENGINE_VERSION = "1.0.0"
 ENGINE_REPO = "https://github.com/Yibbzz/networkforge"
 # The tag's zip rather than "git+https://...", so users don't need git.
 ENGINE_REQUIREMENT = (
@@ -305,7 +305,7 @@ def installed_version():
     except (OSError, subprocess.TimeoutExpired) as err:
         _log(f"the engine did not report its version: {err}")
         return None
-    words = result.stdout.split()  # "networkforge 0.12.0"
+    words = result.stdout.split()  # "networkforge 1.0.0"
     if result.returncode != 0 or not words:
         _log(f"the engine did not report its version (exit code "
              f"{result.returncode}):\n{result.stdout}{result.stderr}")

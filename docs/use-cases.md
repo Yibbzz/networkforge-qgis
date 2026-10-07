@@ -24,7 +24,7 @@ Every use below follows the same three steps:
 New to the plugin? Install it from the [README](../README.md#install)
 first. How to describe a line (which `highway` type, who may use it) is
 in the engine's
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.12.0/docs/tagging-guide.md).
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.0/docs/tagging-guide.md).
 
 ## 1. A proposed road, cycleway or bridge
 
@@ -48,6 +48,8 @@ Good to know:
 - A bridge or tunnel that crosses a street without joining it needs
   `bridge` = `yes` (or `tunnel` = `yes`) and a `layer` value, as in
   OpenStreetMap.
+- A new ferry is a line with `route` = `ferry` and no `highway`; give it
+  a `duration` such as `00:10`.
 - A proposal can also take something away. A bypass that comes with a
   closed high street is one layer with both; see use 3.
 
@@ -114,6 +116,9 @@ id, then change an attribute:
 | Take it out altogether | `remove` = `yes` |
 | Turn a road into a pedestrian street | `highway` = `pedestrian` |
 | Ban a turn at a junction | a short line through the junction with `restriction` = `no_left_turn` (see below) |
+| Stop through traffic with a bollard | a point on the street with `barrier` = `bollard`, in the points layer |
+| Add traffic signals or a crossing | a point with `highway` = `traffic_signals`, or `highway` = `crossing` |
+| Lift a speed limit or a one-way rule | `remove_tags` = `maxspeed`, or `oneway` |
 
 Only attributes that differ from OpenStreetMap are applied, so the
 other fields of the copied street can stay as they are. Changed streets
@@ -132,6 +137,12 @@ called `restriction` set to `no_left_turn`, `no_right_turn`,
 `no_straight_on`, `no_u_turn` or the same with `only_`. Only routers
 obey turn restrictions, so compare the before and after with Valhalla
 (below), not with QGIS's own network tools.
+
+**Bollards and signals.** These are points, not lines: put them in a
+point layer and choose it as the **Points layer** when you build. A
+bollard is the simplest low-traffic scheme there is, one point that
+stops cars and lets bikes and walkers through. As with banned turns,
+only routers obey them.
 
 ## 4. A lower speed limit
 
@@ -213,8 +224,8 @@ ferries, and vehicle types such as bus and truck.
   reached. Counting homes, jobs or patients inside a service area is a
   second step with your own data (for example **Count Points in
   Polygon**).
-- **Turn restrictions in QGIS's own tools.** They are in the PBF files
-  for routers; the QGIS layers can't show them.
+- **Turn restrictions, bollards and signals in QGIS's own tools.** They
+  are in the PBF files for routers; QGIS's network tools ignore them.
 - **Whether OpenStreetMap is right.** The result is as good as the
   street data for your area. Look at the Before network before you rely
   on it.

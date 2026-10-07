@@ -56,7 +56,7 @@ already take care of:
 The engine accepts every tag in the right-hand column, and since
 engine v0.6.0 its Valhalla tests check that each one reaches the PBF
 file and changes the routes Valhalla gives. The engine's
-[network-analyst.md](https://github.com/Yibbzz/networkforge/blob/v0.12.0/docs/network-analyst.md)
+[network-analyst.md](https://github.com/Yibbzz/networkforge/blob/v1.0.0/docs/network-analyst.md)
 lists each ArcGIS feature, the tag that replaces it and the test that
 proves it.
 
@@ -86,6 +86,7 @@ a week against the newest commit of their plugin and the newest
 - [x] Changes to existing streets: removed, closed to everyone, closed
       to motor traffic, made one-way, given a lower speed limit.
 - [x] A banned turn, in OpenStreetMap and in a standalone network.
+- [x] A bollard (cars go round, bikes and walkers pass) and a ferry.
 - [x] Standalone networks: joined at crossings or at vertices only,
       bridges, one-way streets.
 - [x] Their walking isochrone runs on the after network.
@@ -165,9 +166,15 @@ plugin (it has no network logic).
 - [x] **Turn restrictions**: those in OpenStreetMap are kept in the PBF
       since engine v0.6.0. Since engine v0.12.0 you can draw your own, as
       a short line through a junction with a `restriction` field, as
-      ArcGIS does with a turn feature class. Not covered: restrictions
-      through a stretch of street ("via way"), and turn penalties in
-      seconds (Valhalla works out turn delays itself).
+      ArcGIS does with a turn feature class, also through a stretch of
+      street between two junctions (engine v1.0.0). Not covered: turn
+      penalties in seconds (Valhalla works out turn delays itself).
+- [x] **Points on the network**: barriers, gates, signals and crossings,
+      as a points layer (engine v1.0.0).
+- [x] **New ferries** (engine v1.0.0).
+- [ ] **Elevation fields** (`F_ZLEV`, `T_ZLEV`) of data prepared for
+      ArcGIS: such data has to be given `bridge` / `layer` first. The one
+      part of moving an ArcGIS network over that isn't renaming fields.
 - [ ] **Public transport**: out of scope for now.
 
 ## Things not planned

@@ -93,8 +93,9 @@ Processing Toolbox with four tools:
   highlighted in the after layer, and `before.osm.pbf` and
   `after.osm.pbf` in the output folder for routers. Features named in a
   warning or error are selected in your layer. A feature can also
-  **change or remove an existing street** instead of adding a line (see
-  below).
+  **change or remove an existing street** instead of adding a line, a
+  short line through a junction can **ban a turn**, and an optional
+  **points layer** adds bollards, signals and crossings (see below).
 - **Build standalone network** - turns a line layer of your own (council
   centrelines, a survey, the streets of a planned neighbourhood) into a
   routable network without OpenStreetMap: no area to choose, nothing
@@ -155,7 +156,7 @@ way id changes that street instead of adding a line:
    network; removed streets are in the Before network only.
 
 The engine's
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.12.0/docs/tagging-guide.md#changing-existing-streets)
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.0/docs/tagging-guide.md#changing-existing-streets)
 has the details.
 
 ### Banning or forcing a turn
@@ -175,7 +176,37 @@ Turn restrictions are written to the PBF file, where routers such as
 Valhalla obey them. The QGIS layers can't show them, so QGIS's own
 network tools ignore them. For a rule that applies to lorries or buses
 only, and for exceptions, see the
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v0.12.0/docs/tagging-guide.md#turn-restrictions).
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.0/docs/tagging-guide.md#turn-restrictions).
+
+### Bollards, traffic signals and crossings
+
+Things that sit on a point go in a **points layer**, the optional second
+layer in both build tools:
+
+1. Make a point layer and put a point where the thing is: on a
+   junction, or anywhere along a street (the street is cut there).
+2. Describe it with the fields OpenStreetMap uses: `barrier` =
+   `bollard` (or `gate`, `cycle_barrier`, ...), `highway` =
+   `traffic_signals`, or `highway` = `crossing` with `crossing` =
+   `zebra`.
+3. Build. The log says how many points were put on the network.
+
+A bollard stops cars and lets bikes and walkers through, which makes a
+low-traffic street with one point. Routers such as Valhalla obey these;
+QGIS's own network tools don't. In **Build scenario network** a points
+layer is enough by itself: the line layer can be left empty. To take
+out a bollard that is in OpenStreetMap, put a point on it with a field
+`remove_tags` = `barrier`.
+
+### Ferries, and deleting a tag
+
+- A line with `route` = `ferry` and no `highway` is a **ferry**. It
+  joins the streets at its two ends only. `duration` (`hh:mm`) sets the
+  crossing time.
+- On a feature that changes an existing street, `remove_tags` lists
+  tags to **delete** from it, separated by semicolons:
+  `remove_tags` = `maxspeed` lifts a speed limit, `oneway` makes a
+  one-way street two-way.
 
 ## Tested with the Network Analyst plugin
 
@@ -195,10 +226,12 @@ own route and isochrone tools on it. They check that:
 | make a street one-way | follow it one way and go round the other way; walkers are not affected |
 | lower a speed limit | take longer over the same distance |
 | ban a turn | go round the block by car; walkers still turn |
+| put a bollard on a street | go round it by car, still pass by bike and on foot |
 | build a standalone network | cross the junctions made where your lines cross |
 | ... joined at shared vertices only | do not turn where lines merely cross |
 | ... with a bridge | pass over without turning onto it |
 | ... with a one-way street or a banned turn | obey it |
+| ... with a ferry between two quays | cross on it, taking its crossing time |
 
 These run on every change, on QGIS 3 (long-term release) with their
 plugin 6.1 and on QGIS 4 with their plugin 7.1, using Valhalla 3.9.0.
@@ -270,13 +303,12 @@ To build a zip by hand: `uvx qgis-plugin-ci package 0.1.0`.
 
 ## Limitations
 
-No public transport and no traffic simulation. Turn restrictions, those
-in OpenStreetMap and those you draw, are in the PBF files for routers
-only: the QGIS layers know nothing of them. A restriction through a
-stretch of street rather than one junction can't be drawn. An existing
-street can be changed or removed, not redrawn: to move one, remove it
-and draw the new line. Traffic signals, gates and bollards can't be
-added to your own lines, so a standalone network has none.
+No public transport and no traffic simulation. Turn restrictions,
+bollards, gates and traffic signals, those in OpenStreetMap and those
+you add, are for routers: they are in the PBF files, and QGIS's own
+network tools ignore them. An existing street can be changed or
+removed, not redrawn: to move one, remove it and draw the new line.
+Areas the size of a county or a country need a lot of memory.
 
 ## Credits and licence
 

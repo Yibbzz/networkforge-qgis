@@ -47,7 +47,7 @@ def test_checks_without_an_area_by_default(provider, fake_engine, lines, feedbac
     assert not [a for a in args if a.startswith("--bbox")]
     assert "--preset" not in args
     assert results["FEATURES"] == 2
-    assert "No problems found in 2 line(s)." in feedback.infos
+    assert "No problems found in 2 feature(s)." in feedback.infos
     assert "  1 usable by: walk, bike" in feedback.infos
 
 

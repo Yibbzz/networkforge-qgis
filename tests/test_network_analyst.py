@@ -275,12 +275,15 @@ def line_layer(*lines, fields=("highway",)):
     return layer
 
 
-def point_layer(*points):
-    layer = QgsVectorLayer("Point?crs=EPSG:4326", "stops", "memory")
+def point_layer(*points, fields=()):
+    """A layer of (x, y, *values of `fields`) points."""
+    spec = "".join(f"&field={name}:string" for name in fields)
+    layer = QgsVectorLayer(f"Point?crs=EPSG:4326{spec}", "stops", "memory")
     features = []
-    for x, y in points:
+    for x, y, *values in points:
         feature = QgsFeature(layer.fields())
         feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
+        feature.setAttributes(values)
         features.append(feature)
     layer.dataProvider().addFeatures(features)
     return layer
@@ -352,9 +355,9 @@ def scenario(provider, real_engine, network_analyst, valhalla_programs, feedback
         feedback_ = feedback
         _graphs = 0
 
-        def build(self, layer):
+        def build(self, layer=None, points=None):
             return processing.run("networkforge:build_network", {
-                "EXTENT": EXTENT, "CUSTOM": layer, "OSM_FILE": str(GRID),
+                "EXTENT": EXTENT, "CUSTOM": layer, "POINTS": points, "OSM_FILE": str(GRID),
                 "OUTPUT_FOLDER": str(tmp_path / "out"),
             }, feedback=feedback)
 
@@ -503,6 +506,20 @@ def test_a_banned_turn_is_obeyed_by_cars_not_walkers(scenario):
     assert walking[1].metres == pytest.approx(walking[0].metres, abs=1)
 
 
+def test_a_bollard_stops_cars_and_lets_bikes_and_walkers_through(scenario):
+    # A point half-way along the middle block of row 0, and no lines at all.
+    bollard = point_layer((-3.6982, 40.4000, "bollard"), fields=("barrier",))
+    QgsProject.instance().addMapLayer(bollard)
+    built = scenario.build(points=bollard)
+
+    driving, cycling, walking = scenario.before_and_after(
+        built, ("auto", A, B), ("bicycle", A, B), ("pedestrian", A, B))
+
+    assert between(driving[0], DIRECT) and between(driving[1], DETOUR)
+    for before, after in (cycling, walking):
+        assert between(before, DIRECT) and between(after, DIRECT)
+
+
 # --------------------------------------------- a network of your own lines
 
 def own_streets(*extra, fields=("highway",)):
@@ -559,3 +576,20 @@ def test_a_banned_turn_in_a_standalone_network(scenario):
     with scenario.valhalla(built["NETWORK_OSM"]):
         assert between(scenario.route("auto", START, TOP), VIA_BLOCK)
         assert between(scenario.route("pedestrian", START, TOP), VIA_CROSSING)
+
+
+def test_a_ferry_joins_two_streets_in_a_standalone_network(scenario):
+    # Two quays with water between them: the ferry is the only way across.
+    streets = line_layer(
+        ([(-3.7000, 40.4000), (-3.6990, 40.4000)], "residential"),
+        ([(-3.6990, 40.4000), (-3.6970, 40.4000)], None, "ferry", "00:02"),
+        ([(-3.6970, 40.4000), (-3.6960, 40.4000)], "residential"),
+        fields=("highway", "route", "duration"))
+    built = scenario.standalone(streets)
+
+    with scenario.valhalla(built["NETWORK_OSM"]):
+        for profile in ("pedestrian", "auto"):
+            crossing = scenario.route(profile, (-3.6996, 40.4000), (-3.6964, 40.4000))
+            # About 34 m of street, 170 m of ferry and 51 m of street.
+            assert 255 < crossing.metres < 290, profile
+            assert crossing.seconds >= 120, profile   # the two minutes on board

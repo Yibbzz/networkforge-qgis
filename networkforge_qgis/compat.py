@@ -15,11 +15,13 @@ from qgis.core import (
 
 try:
     SOURCE_VECTOR_LINE = Qgis.ProcessingSourceType.VectorLine
+    SOURCE_VECTOR_POINT = Qgis.ProcessingSourceType.VectorPoint
     NUMBER_DOUBLE = Qgis.ProcessingNumberParameterType.Double
     FLAG_ADVANCED = Qgis.ProcessingParameterFlag.Advanced
     SKIP_GEOMETRY_CHECKS = Qgis.ProcessingFeatureSourceFlag.SkipGeometryValidityChecks
 except AttributeError:  # QGIS 3.34
     SOURCE_VECTOR_LINE = QgsProcessing.TypeVectorLine
+    SOURCE_VECTOR_POINT = QgsProcessing.TypeVectorPoint
     NUMBER_DOUBLE = QgsProcessingParameterNumber.Double
     FLAG_ADVANCED = QgsProcessingParameterDefinition.FlagAdvanced
     SKIP_GEOMETRY_CHECKS = QgsProcessingFeatureSource.FlagSkipGeometryValidityChecks
@@ -35,3 +37,12 @@ def whole_number_field(name):
         from qgis.PyQt.QtCore import QVariant
 
         return QgsField(name, QVariant.LongLong)
+
+
+try:
+    # A layer that may hold lines and points together.
+    ANY_GEOMETRY = Qgis.WkbType.Unknown
+except AttributeError:  # QGIS 3.34
+    from qgis.core import QgsWkbTypes
+
+    ANY_GEOMETRY = QgsWkbTypes.Unknown
