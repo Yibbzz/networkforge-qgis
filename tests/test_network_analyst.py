@@ -203,11 +203,23 @@ def valhalla_programs():
     return python, Path(found.stdout.strip())
 
 
+def _valhalla_env(programs_dir):
+    """The environment for Valhalla's programs."""
+    env = engine._clean_env()
+    if sys.platform == "win32":
+        # On Windows their libraries are in a folder beside the package,
+        # which the programs only find through PATH (exit code 3221225781
+        # without it). The Network Analyst plugin does the same.
+        libraries = programs_dir.parent.parent / "pyvalhalla.libs"
+        env["PATH"] = os.pathsep.join([str(libraries), env.get("PATH", "")])
+    return env
+
+
 @contextmanager
 def valhalla_serving(pbf, folder, programs):
     """Build a Valhalla graph from an OSM file and serve it on localhost."""
     python, programs_dir = programs
-    env = engine._clean_env()
+    env = _valhalla_env(programs_dir)
     with socket.socket() as probe:
         if probe.connect_ex(("127.0.0.1", PORT)) == 0:
             pytest.fail(f"Port {PORT} is in use: stop the Valhalla (or other "
