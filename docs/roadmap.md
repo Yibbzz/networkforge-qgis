@@ -63,48 +63,13 @@ proves it.
 ## Next steps
 
 The tools do what the goal asks: new lines, changed and removed
-streets, turn restrictions, points, ferries and standalone networks,
-each tested with Valhalla through the Network Analyst plugin. What is
-left is proving it in real use and getting it to people. Do these in
+streets, turn restrictions, points, ferries and standalone networks.
+They are tested with Valhalla through the Network Analyst plugin, on
+Linux and Windows, and have been used by hand on a screen on both (see
+[Done](#done)). What is left is getting it to people. Do these in
 order.
 
-### 1. Use it on a screen
-
-Everything so far was tested without a screen, on networks of a few
-streets.
-
-- [ ] Work through the [hands-on checklist](../manual-test/README.md),
-      parts 1 to 6, with the data in `manual-test/`. About an hour.
-- [ ] Fix what it turns up: confusing labels, unclear messages, styling.
-
-### 2. Click through the Network Analyst plugin once
-
-- [ ] Checklist part 7: install their plugin and `pyvalhalla`, build a
-      graph from `after.osm.pbf` with their own button, and route on it.
-      The automated tests run the same Valhalla programs directly, but
-      can't click that button.
-
-### 3. Test on Windows
-
-- [x] A Windows job on GitHub (`windows` in
-      `.github/workflows/tests.yml`). It installs QGIS from qgis.org's
-      installer, has QGIS load the plugin from a new profile, lets the
-      first tool run install the engine, and builds networks in folders
-      with spaces and accents. Its first run (2026-10-11, QGIS 3.44.14)
-      passed 93 of 94 tests: the engine installs and runs from
-      `Zoë Müller\networkforge`.
-- [x] The one failure was in the engine: on Windows it couldn't read
-      an OSM file from a folder with an accent in its name. Fixed in
-      engine v1.0.1, which also gave the engine a Windows job of its
-      own.
-- [ ] Get the Network Analyst step of the Windows job green (routing on
-      the PBF files with Valhalla on Windows). Not yet run.
-- [ ] Checklist part 8 once by hand, for what the job can't see: the
-      install from the repository URL, and that no black console window
-      flashes up. Most users are on Windows, and it was last tried by
-      hand with plugin 0.1.x and engine v0.5.0.
-
-### 4. Tell routing.earth
+### 1. Tell routing.earth
 
 - [ ] Comment on
       [issue #13](https://github.com/routing-earth/qgis-network-analyst-tutorial-challenge/issues/13)
@@ -116,7 +81,7 @@ streets.
       their tools refuse their own defaults for drop-down settings
       ("Incorrect parameter value for INPUT_MODE").
 
-### 5. Write the tutorial
+### 2. Write the tutorial
 
 - [ ] Their rules: written by a person, not by AI, and not a copy of
       Esri's steps one by one.
@@ -126,14 +91,14 @@ streets.
       [ArcGIS guide](migrating-from-arcgis.md) are material to draw on.
 - [ ] Keep a copy in this repo's `docs/` as the main user guide.
 
-### 6. Publish on plugins.qgis.org
+### 3. Publish on plugins.qgis.org
 
 - [ ] Make an OSGeo account and set the repository secrets
       `OSGEO_USERNAME` and `OSGEO_PASSWORD`; the release workflow does
       the rest on the next version tag.
 - [ ] Until then, users add this repository's URL to QGIS by hand.
-- [ ] Keep "experimental" until steps 1 to 3 are done and a few people
-      outside the project have used it.
+- [ ] Keep "experimental" until a few people outside the project have
+      used it.
 
 ### Later, in the engine
 
@@ -156,6 +121,26 @@ blocks the steps above.
 
 ## Done
 
+- [x] **Used on a screen** (2026-10-11): the whole
+      [hands-on checklist](../manual-test/README.md) worked through in
+      QGIS with the data in `manual-test/`, on Linux and on Windows.
+- [x] **Routed in the Network Analyst plugin by hand** (2026-10-11):
+      their plugin and `pyvalhalla` installed, a graph built from the
+      checklist's PBF output with their own button, and routes for
+      walking, cycling and driving. The routes use the custom lines.
+- [x] **Works on Windows** (2026-10-11), by hand and automatically:
+      - By hand: the plugin installed and used end to end on a Windows
+        computer, routing included (checklist part 8).
+      - On every push: a Windows job on GitHub (`windows` in
+        `.github/workflows/tests.yml`) installs QGIS from qgis.org's
+        installer, has QGIS load the plugin from a new profile, lets the
+        first tool run install the engine, builds networks in folders
+        with spaces and accents, and routes on the PBF files with the
+        Network Analyst plugin and Valhalla.
+      - It found one fault, in the engine: on Windows an OSM file could
+        not be read from a folder with an accent in its name. Fixed in
+        engine v1.0.1, which also gave the engine a Windows job of its
+        own.
 - [x] **The two plugins work together** (2026-10-06): automated tests
       build networks with this plugin and route on them with the Network
       Analyst plugin's own tools, on every push, on QGIS 3 (LTR) with
