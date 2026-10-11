@@ -314,6 +314,18 @@ networkforge-qgis/
 ## Testing
 - `pytest` + `pytest-qgis`, run in CI inside the `qgis/qgis` Docker image
   (tags `ltr` and `latest`), like the engine's QGIS job.
+- A `windows` job in `tests.yml` runs the same tests (minus
+  `test_network_analyst.py`) on `windows-latest`: QGIS LTR from
+  Chocolatey's `qgis-ltr` (qgis.org's installer), tests run with its
+  `bin\python-qgis-ltr.bat`, engine in `NF_TEST_ENGINE_DIR` =
+  `...\Zoë Müller\networkforge`. It can't be run from Linux: check the
+  job on GitHub after changing it or `engine.py`.
+- `tests/test_qgis_process.py` starts the real `qgis_process`
+  (`NF_QGIS_PROCESS`, or found on PATH) with `QGIS_CUSTOM_CONFIG_PATH`
+  set to a new folder holding a copy of the plugin, with uv taken off
+  PATH: the first tool run there is a new user's first run. No accents
+  in its paths: on Windows `qgis_process` is a .bat file, and cmd.exe is
+  not what users go through. `test_end_to_end.py` has the accents.
 - Unit tests fake the CLI (a stub emitting canned JSON lines) - fast.
 - One end-to-end test installs the pinned engine and builds from a small
   local extract (`--osm-source`), never Overpass. A tiny extract can be

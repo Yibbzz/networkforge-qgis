@@ -213,7 +213,11 @@ button is the one step no automated test covers.
 
 ## Part 8: on Windows
 
-Most users are on Windows, and it was last tried several versions ago.
+Most users are on Windows, and it was last tried by hand several
+versions ago. GitHub now tests the engine install, the tools and folder
+names with spaces and accents on Windows after every change, so this
+part is for what it can't see: the install from the repository URL, the
+forms, and whether a console window flashes up.
 On a Windows computer with QGIS:
 
 - [ ] **8.1** Install the plugin from the repository URL in the README.

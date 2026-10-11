@@ -86,9 +86,16 @@ streets.
 
 ### 3. Test on Windows
 
-- [ ] Checklist part 8. Most users are on Windows, and it was last tried
-      with plugin 0.1.x and engine v0.5.0. The engine install is the
-      part most likely to differ.
+- [ ] Get the Windows job on GitHub green (`windows` in
+      `.github/workflows/tests.yml`). It installs QGIS from qgis.org's
+      installer, has QGIS load the plugin from a new profile, lets the
+      first tool run install the engine, and builds networks in folders
+      with spaces and accents. It was written on Linux, so its first
+      run is the real test of it.
+- [ ] Checklist part 8 once by hand, for what the job can't see: the
+      install from the repository URL, and that no black console window
+      flashes up. Most users are on Windows, and it was last tried by
+      hand with plugin 0.1.x and engine v0.5.0.
 
 ### 4. Tell routing.earth
 

@@ -8,6 +8,7 @@ OpenStreetMap: the network comes from tests/data/grid.osm.
     pytest -m "not engine"    everything else
 """
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -80,6 +81,33 @@ def test_build_gives_before_and_after_networks(
         assert Path(results[output]).stat().st_size > 0
     assert not feedback.warnings
     assert feedback.progress[-1] == 100
+
+
+def test_build_copes_with_spaces_and_accents_in_folder_names(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    # On Windows a user's own folders are under "C:\Users\Zoë Müller".
+    home = tmp_path / "Zoë Müller"
+    osm_file = home / "Données OSM" / "grid net.osm"
+    osm_file.parent.mkdir(parents=True)
+    shutil.copy(GRID, osm_file)
+    out = home / "Réseau test"
+    plan = line_layer(("cycleway", "20", DIAGONAL))
+
+    results = processing.run("networkforge:build_network", {
+        "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(osm_file),
+        "OUTPUT_FOLDER": str(out),
+    }, feedback=feedback)
+
+    assert Path(results["AFTER"].split("|")[0]).parent == out
+    before = QgsVectorLayer(results["BEFORE"], "before", "ogr")
+    after = QgsVectorLayer(results["AFTER"], "after", "ogr")
+    assert before.isValid() and after.isValid()
+    assert before.featureCount() == 24
+    assert after.featureCount() > before.featureCount()
+    for output in ("BEFORE_OSM", "AFTER_OSM"):
+        assert Path(results[output]).parent == out
+        assert Path(results[output]).stat().st_size > 0
+    assert not feedback.warnings
 
 
 def test_build_warns_about_and_selects_a_line_that_does_not_connect(

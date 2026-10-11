@@ -305,8 +305,19 @@ Port 8002 must be free, because that is where the plugin looks for a
 Valhalla on your own computer. To skip them:
 `pytest -m "not network_analyst"`.
 
+`tests/test_qgis_process.py` is the closest to a new user: it starts
+the real QGIS (`qgis_process`) with a new, empty profile folder holding
+a copy of the plugin, checks that QGIS lists the tools, and runs one.
+That first run fetches uv, installs the engine and builds a network,
+with a space in every folder name.
+
 GitHub runs all of them on every push, in the official QGIS Docker
-image, for both the long-term release and the latest QGIS.
+image, for both the long-term release and the latest QGIS. It also runs
+them **on Windows**, with the long-term release installed from
+qgis.org's own installer, and the engine in a folder with a space and an
+accent in its name (`Zoë Müller`). The Windows run leaves out the
+Network Analyst tests: what is in a PBF file doesn't depend on the
+computer that wrote it.
 
 ### Testing by hand
 

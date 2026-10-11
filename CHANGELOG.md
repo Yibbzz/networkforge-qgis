@@ -6,6 +6,11 @@
 - New page of [worked examples](docs/examples.md) with pictures: routes
   drawn by Valhalla on networks built with the plugin.
 - The README shows the current forms of both build tools.
+- The tests now also run on Windows on every change, in QGIS installed
+  from qgis.org's installer. New tests have QGIS itself load the plugin
+  from a new profile folder and install the engine on the first tool
+  run, and build networks in folders with spaces and accents in their
+  names.
 
 ## 0.4.0 - 2026-10-07
 

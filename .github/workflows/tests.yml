@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:   # a "Run workflow" button on the Actions page
 
 jobs:
   test:
@@ -46,6 +47,62 @@ jobs:
         with:
           name: coverage
           path: coverage.xml
+
+  # Most users are on Windows, where the engine install is the part most
+  # likely to differ. QGIS is installed from the same installer they use
+  # (qgis.org's, fetched by Chocolatey) and the tests run in its Python.
+  # tests/test_qgis_process.py is the one closest to a new user: QGIS
+  # loads the plugin from a new profile folder and the first tool run
+  # fetches uv, installs the engine and builds a network.
+  windows:
+    name: Windows, QGIS ltr
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install QGIS
+        run: choco install qgis-ltr -y --no-progress
+
+      - name: Find QGIS
+        run: |
+          $bin = (Get-Item "C:\Program Files\QGIS*\bin" | Select-Object -First 1).FullName
+          if (-not $bin) { throw "QGIS is not in C:\Program Files" }
+          $python = (Get-Item "$bin\python-qgis*.bat" | Select-Object -First 1).FullName
+          $process = (Get-Item "$bin\qgis_process-qgis*.bat" | Select-Object -First 1).FullName
+          if (-not $python -or -not $process) {
+            Get-ChildItem $bin -Filter *.bat
+            throw "python-qgis*.bat or qgis_process-qgis*.bat is missing from $bin"
+          }
+          Write-Host "QGIS's Python: $python"
+          Write-Host "qgis_process:  $process"
+          Add-Content -Path $env:GITHUB_ENV -Value "QGIS_PYTHON=$python"
+          Add-Content -Path $env:GITHUB_ENV -Value "NF_QGIS_PROCESS=$process"
+
+      - name: Install test tools
+        run: '& $env:QGIS_PYTHON -m pip install -r requirements-dev.txt'
+
+      # Without the Network Analyst tests: what is in the PBF files does
+      # not depend on the computer that wrote them, and the Linux jobs
+      # route on them.
+      - name: Run tests
+        env:
+          # The engine goes into a folder with a space and an accent,
+          # like the profile folder of a user called Zoë Müller.
+          NF_TEST_ENGINE_DIR: ${{ runner.temp }}\Zoë Müller\networkforge
+        run: >
+          & $env:QGIS_PYTHON -m pytest -v
+          --ignore=tests/test_network_analyst.py
+          --basetemp="$env:RUNNER_TEMP\pytest"
+
+      # engine.log has what uv and the engine printed.
+      - name: Keep the engine logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-engine-logs
+          path: ${{ runner.temp }}/**/engine.log
+          if-no-files-found: ignore
 
   # Optional: add a CODECOV_TOKEN repo secret (codecov.io, free for
   # public repos) to get coverage history and the README badge. Done in
