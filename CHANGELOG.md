@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 - 2026-10-11
 
 - New guide: [Moving an ArcGIS street network to QGIS](docs/migrating-from-arcgis.md).
 - New page of [worked examples](docs/examples.md) with pictures: routes
