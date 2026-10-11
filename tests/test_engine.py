@@ -1,5 +1,7 @@
 """Running the engine as a separate program: environment, events, cancel."""
 
+import os
+import subprocess
 import threading
 import time
 
@@ -91,6 +93,40 @@ def test_run_stops_quickly_when_cancelled(fake_engine, feedback):
     assert time.monotonic() - started < 10
 
 
+def test_engine_runs_without_a_console_window(fake_engine, feedback, monkeypatch):
+    # On Windows a black window flashes up for every program started
+    # without this setting; elsewhere there is nothing to hide.
+    if os.name == "nt":
+        assert engine._NO_WINDOW == subprocess.CREATE_NO_WINDOW != 0
+    seen = []
+    popen = subprocess.Popen
+
+    def spy(*args, **kwargs):
+        seen.append(kwargs.get("creationflags"))
+        return popen(*args, **kwargs)
+
+    monkeypatch.setattr(engine.subprocess, "Popen", spy)
+    fake_engine.play([{"event": "done", "outputs": {}}])
+
+    assert engine.run(["build"], feedback, lambda event: None) == 0
+    assert engine.info() == {"event": "done", "outputs": {}}
+
+    assert len(seen) == 2
+    assert set(seen) == {engine._NO_WINDOW}
+
+
+def test_engine_program_is_where_each_system_puts_it(monkeypatch, tmp_path):
+    monkeypatch.setattr(engine, "base_dir", lambda: tmp_path)
+
+    monkeypatch.setattr(engine, "_WINDOWS", True)
+    assert engine.engine_exe() == tmp_path / "engine-venv" / "Scripts" / "networkforge.exe"
+    assert engine._own_uv_name() == "uv.exe"
+
+    monkeypatch.setattr(engine, "_WINDOWS", False)
+    assert engine.engine_exe() == tmp_path / "engine-venv" / "bin" / "networkforge"
+    assert engine._own_uv_name() == "uv"
+
+
 def test_run_explains_an_engine_that_will_not_start(fake_engine, feedback, monkeypatch, tmp_path):
     monkeypatch.setattr(engine, "_engine_cmd", lambda: [str(tmp_path / "missing-program")])
 
@@ -124,7 +160,8 @@ def test_uv_is_unpacked_from_its_own_download(monkeypatch, tmp_path):
 
     uv = engine._own_uv()
     assert uv.read_bytes() == b"#!uv"
-    assert uv.stat().st_mode & 0o111  # can be run
+    if os.name != "nt":  # Windows goes by the file's ending instead
+        assert uv.stat().st_mode & 0o111  # can be run
     assert not engine._unpack_uv("uv.tar.gz", _uv_archive("something-else"))
 
 

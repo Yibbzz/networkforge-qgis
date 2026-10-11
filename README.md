@@ -173,7 +173,7 @@ way id changes that street instead of adding a line:
    network; removed streets are in the Before network only.
 
 The engine's
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.0/docs/tagging-guide.md#changing-existing-streets)
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.1/docs/tagging-guide.md#changing-existing-streets)
 has the details.
 
 ### Banning or forcing a turn
@@ -193,7 +193,7 @@ Turn restrictions are written to the PBF file, where routers such as
 Valhalla obey them. The QGIS layers can't show them, so QGIS's own
 network tools ignore them. For a rule that applies to lorries or buses
 only, and for exceptions, see the
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.0/docs/tagging-guide.md#turn-restrictions).
+[tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.1/docs/tagging-guide.md#turn-restrictions).
 
 ### Bollards, traffic signals and crossings
 
@@ -305,8 +305,18 @@ Port 8002 must be free, because that is where the plugin looks for a
 Valhalla on your own computer. To skip them:
 `pytest -m "not network_analyst"`.
 
+`tests/test_qgis_process.py` is the closest to a new user: it starts
+the real QGIS (`qgis_process`) with a new, empty profile folder holding
+a copy of the plugin, checks that QGIS lists the tools, and runs one.
+That first run fetches uv, installs the engine and builds a network,
+with a space in every folder name.
+
 GitHub runs all of them on every push, in the official QGIS Docker
-image, for both the long-term release and the latest QGIS.
+image, for both the long-term release and the latest QGIS. It also runs
+them **on Windows**, with the long-term release installed from
+qgis.org's own installer, and the engine in a folder with a space and an
+accent in its name (`Zoë Müller`), and routes on the PBF files with the
+Network Analyst plugin and Valhalla there as well.
 
 ### Testing by hand
 

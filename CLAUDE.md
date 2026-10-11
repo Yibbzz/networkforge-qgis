@@ -34,7 +34,7 @@ the output that matters most.
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v1.0.0`) in one constant. The
+- **Pin the engine version** (currently `v1.0.1`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -71,7 +71,7 @@ the output that matters most.
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.0.0.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.0.1.zip"`
   (with `uv venv --python 3.12 --python-preference only-managed` - uv
   downloads its own Python, so QGIS's Python version doesn't matter.
   Without `only-managed` uv reuses a matching Python it finds; the
@@ -111,7 +111,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v1.0.0, the first stable one)
+## Engine contract (v1.0.1; v1.0.0 was the first stable one)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
@@ -314,6 +314,21 @@ networkforge-qgis/
 ## Testing
 - `pytest` + `pytest-qgis`, run in CI inside the `qgis/qgis` Docker image
   (tags `ltr` and `latest`), like the engine's QGIS job.
+- A `windows` job in `tests.yml` runs the same tests on
+  `windows-latest` (`test_network_analyst.py` in a step of its own):
+  QGIS LTR from Chocolatey's `qgis-ltr` (qgis.org's installer), tests
+  run with its `bin\python-qgis-ltr.bat`, engine in
+  `NF_TEST_ENGINE_DIR` = `...\Zoë Müller\networkforge`. It can't be run
+  from Linux: check the job on GitHub after changing it or `engine.py`.
+- Engine v1.0.0 couldn't open OSM files in folders with non-ASCII
+  letters on Windows (`osmium`); v1.0.1 fixed it (the engine's
+  `paths.py`). Two tests in `test_end_to_end.py` guard it.
+- `tests/test_qgis_process.py` starts the real `qgis_process`
+  (`NF_QGIS_PROCESS`, or found on PATH) with `QGIS_CUSTOM_CONFIG_PATH`
+  set to a new folder holding a copy of the plugin, with uv taken off
+  PATH: the first tool run there is a new user's first run. No accents
+  in its paths: on Windows `qgis_process` is a .bat file, and cmd.exe is
+  not what users go through. `test_end_to_end.py` has the accents.
 - Unit tests fake the CLI (a stub emitting canned JSON lines) - fast.
 - One end-to-end test installs the pinned engine and builds from a small
   local extract (`--osm-source`), never Overpass. A tiny extract can be

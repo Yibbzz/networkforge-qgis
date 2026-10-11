@@ -6,6 +6,16 @@
 - New page of [worked examples](docs/examples.md) with pictures: routes
   drawn by Valhalla on networks built with the plugin.
 - The README shows the current forms of both build tools.
+- The tests now also run on Windows on every change, in QGIS installed
+  from qgis.org's installer. New tests have QGIS itself load the plugin
+  from a new profile folder and install the engine on the first tool
+  run, and build networks in folders with spaces and accents in their
+  names.
+- The plugin now uses NetworkForge engine v1.0.1 (was v1.0.0); the
+  first tool you run replaces the installed engine. It fixes what those
+  tests found: on Windows an OpenStreetMap file could not be read from,
+  and the PBF files not written to, a folder with accented letters in
+  its name (`C:\Users\Zoë\Documents`).
 
 ## 0.4.0 - 2026-10-07
 

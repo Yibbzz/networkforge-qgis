@@ -8,6 +8,7 @@ OpenStreetMap: the network comes from tests/data/grid.osm.
     pytest -m "not engine"    everything else
 """
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -80,6 +81,49 @@ def test_build_gives_before_and_after_networks(
         assert Path(results[output]).stat().st_size > 0
     assert not feedback.warnings
     assert feedback.progress[-1] == 100
+
+
+# On Windows a user's own folders are under "C:\Users\Zoë Müller". Engine
+# v1.0.0 couldn't open OSM files there; v1.0.1 can. The Windows job on
+# GitHub is where these two prove anything.
+ACCENTS = "Zoë Müller"
+
+
+def test_build_reads_an_osm_file_from_a_folder_with_spaces_and_accents(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    osm_file = tmp_path / ACCENTS / "Données OSM" / "réseau routier.osm"
+    osm_file.parent.mkdir(parents=True)
+    shutil.copy(GRID, osm_file)
+    plan = line_layer(("cycleway", "20", DIAGONAL))
+
+    results = processing.run("networkforge:build_network", {
+        "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(osm_file),
+        "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+
+    assert QgsVectorLayer(results["BEFORE"], "before", "ogr").featureCount() == 24
+    assert not feedback.warnings
+
+
+def test_build_writes_to_a_folder_with_spaces_and_accents(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    out = tmp_path / ACCENTS / "Réseau test"
+    plan = line_layer(("cycleway", "20", DIAGONAL))
+
+    results = processing.run("networkforge:build_network", {
+        "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(GRID),
+        "OUTPUT_FOLDER": str(out),
+    }, feedback=feedback)
+
+    before = QgsVectorLayer(results["BEFORE"], "before", "ogr")
+    after = QgsVectorLayer(results["AFTER"], "after", "ogr")
+    assert before.isValid() and after.isValid()
+    assert before.featureCount() == 24
+    assert after.featureCount() > before.featureCount()
+    for output in ("BEFORE_OSM", "AFTER_OSM"):
+        assert Path(results[output]).parent == out
+        assert Path(results[output]).stat().st_size > 0
+    assert not feedback.warnings
 
 
 def test_build_warns_about_and_selects_a_line_that_does_not_connect(
