@@ -69,7 +69,7 @@ Notes:
   over OpenStreetMap's types. What matters most for routing is the
   split between motorways, main roads and local streets. The full list
   is in the
-  [tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.0/docs/tagging-guide.md#attributes).
+  [tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.1/docs/tagging-guide.md#attributes).
   Paths for walking only are `footway`; slip roads are `motorway_link`,
   `trunk_link` and so on.
 - **One-way codes differ between datasets.** Some use `FT` and `TF`,

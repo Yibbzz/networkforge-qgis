@@ -161,7 +161,7 @@ def network_analyst(qgis_processing):
                           folder / "valhalla" / "third_party" / "routingpy")
             (folder / "ready").write_text(branch)
     version = next((line.split("=", 1)[1] for line in
-                    (folder / "valhalla" / "metadata.txt").read_text().splitlines()
+                    (folder / "valhalla" / "metadata.txt").read_text(encoding="utf-8").splitlines()
                     if line.startswith("version=")), "?")
     print(f"\nNetwork Analyst plugin {version} ({branch}"
           f"{', newest commit' if LATEST else ' at ' + commit[:10]})")

@@ -56,7 +56,7 @@ already take care of:
 The engine accepts every tag in the right-hand column, and since
 engine v0.6.0 its Valhalla tests check that each one reaches the PBF
 file and changes the routes Valhalla gives. The engine's
-[network-analyst.md](https://github.com/Yibbzz/networkforge/blob/v1.0.0/docs/network-analyst.md)
+[network-analyst.md](https://github.com/Yibbzz/networkforge/blob/v1.0.1/docs/network-analyst.md)
 lists each ArcGIS feature, the tag that replaces it and the test that
 proves it.
 
@@ -86,12 +86,19 @@ streets.
 
 ### 3. Test on Windows
 
-- [ ] Get the Windows job on GitHub green (`windows` in
+- [x] A Windows job on GitHub (`windows` in
       `.github/workflows/tests.yml`). It installs QGIS from qgis.org's
       installer, has QGIS load the plugin from a new profile, lets the
       first tool run install the engine, and builds networks in folders
-      with spaces and accents. It was written on Linux, so its first
-      run is the real test of it.
+      with spaces and accents. Its first run (2026-10-11, QGIS 3.44.14)
+      passed 93 of 94 tests: the engine installs and runs from
+      `Zoë Müller\networkforge`.
+- [x] The one failure was in the engine: on Windows it couldn't read
+      an OSM file from a folder with an accent in its name. Fixed in
+      engine v1.0.1, which also gave the engine a Windows job of its
+      own.
+- [ ] Get the Network Analyst step of the Windows job green (routing on
+      the PBF files with Valhalla on Windows). Not yet run.
 - [ ] Checklist part 8 once by hand, for what the job can't see: the
       install from the repository URL, and that no black console window
       flashes up. Most users are on Windows, and it was last tried by

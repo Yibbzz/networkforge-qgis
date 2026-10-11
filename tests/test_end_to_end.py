@@ -83,22 +83,38 @@ def test_build_gives_before_and_after_networks(
     assert feedback.progress[-1] == 100
 
 
-def test_build_copes_with_spaces_and_accents_in_folder_names(
+# On Windows a user's own folders are under "C:\Users\Zoë Müller". Engine
+# v1.0.0 couldn't open OSM files there; v1.0.1 can. The Windows job on
+# GitHub is where these two prove anything.
+ACCENTS = "Zoë Müller"
+
+
+def test_build_reads_an_osm_file_from_a_folder_with_spaces_and_accents(
         provider, real_engine, feedback, tmp_path, qgis_new_project):
-    # On Windows a user's own folders are under "C:\Users\Zoë Müller".
-    home = tmp_path / "Zoë Müller"
-    osm_file = home / "Données OSM" / "grid net.osm"
+    osm_file = tmp_path / ACCENTS / "Données OSM" / "réseau routier.osm"
     osm_file.parent.mkdir(parents=True)
     shutil.copy(GRID, osm_file)
-    out = home / "Réseau test"
     plan = line_layer(("cycleway", "20", DIAGONAL))
 
     results = processing.run("networkforge:build_network", {
         "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(osm_file),
+        "OUTPUT_FOLDER": str(tmp_path / "out"),
+    }, feedback=feedback)
+
+    assert QgsVectorLayer(results["BEFORE"], "before", "ogr").featureCount() == 24
+    assert not feedback.warnings
+
+
+def test_build_writes_to_a_folder_with_spaces_and_accents(
+        provider, real_engine, feedback, tmp_path, qgis_new_project):
+    out = tmp_path / ACCENTS / "Réseau test"
+    plan = line_layer(("cycleway", "20", DIAGONAL))
+
+    results = processing.run("networkforge:build_network", {
+        "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(GRID),
         "OUTPUT_FOLDER": str(out),
     }, feedback=feedback)
 
-    assert Path(results["AFTER"].split("|")[0]).parent == out
     before = QgsVectorLayer(results["BEFORE"], "before", "ogr")
     after = QgsVectorLayer(results["AFTER"], "after", "ogr")
     assert before.isValid() and after.isValid()

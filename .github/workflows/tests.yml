@@ -82,9 +82,6 @@ jobs:
       - name: Install test tools
         run: '& $env:QGIS_PYTHON -m pip install -r requirements-dev.txt'
 
-      # Without the Network Analyst tests: what is in the PBF files does
-      # not depend on the computer that wrote them, and the Linux jobs
-      # route on them.
       - name: Run tests
         env:
           # The engine goes into a folder with a space and an accent,
@@ -95,13 +92,26 @@ jobs:
           --ignore=tests/test_network_analyst.py
           --basetemp="$env:RUNNER_TEMP\pytest"
 
+      # A step of its own, so that a red job shows at a glance whether
+      # it is the plugin or the routing that failed on Windows.
+      - name: Route on the PBF files with the Network Analyst plugin
+        if: ${{ !cancelled() }}
+        env:
+          NF_TEST_ENGINE_DIR: ${{ runner.temp }}\Zoë Müller\networkforge
+        run: >
+          & $env:QGIS_PYTHON -m pytest -v -s
+          tests/test_network_analyst.py
+          --basetemp="$env:RUNNER_TEMP\pytest-routing"
+
       # engine.log has what uv and the engine printed.
       - name: Keep the engine logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-engine-logs
-          path: ${{ runner.temp }}/**/engine.log
+          name: windows-logs
+          path: |
+            ${{ runner.temp }}/**/engine.log
+            ${{ runner.temp }}/**/valhalla_service.log
           if-no-files-found: ignore
 
   # Optional: add a CODECOV_TOKEN repo secret (codecov.io, free for
