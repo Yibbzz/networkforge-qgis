@@ -77,9 +77,16 @@ order.
       (`docs/images/example-footbridge.png`).
 - [ ] Ask two things: whether a tutorial that uses a second plugin
       (NetworkForge) is welcome, and what format they want.
-- [ ] Report what the tests found: run from Python or `qgis_process`,
-      their tools refuse their own defaults for drop-down settings
-      ("Incorrect parameter value for INPUT_MODE").
+- [x] Default vehicle sizes (plugin 6.1.0 and 7.1.0): width and height
+      were swapped for car, bus and lorry, so a lorry passed under a 3 m
+      bridge. Reported as their
+      [issue #82](https://github.com/routing-earth/network-analyst-qgis-plugin/issues/82)
+      and confirmed; fix offered in
+      [pull request #83](https://github.com/routing-earth/network-analyst-qgis-plugin/pull/83).
+- Not reported, by choice: run from Python, their tools refuse their
+  own defaults for drop-down settings ("Incorrect parameter value for
+  INPUT_PROVIDER"). Passing each drop-down by its position is an easy
+  way round it, and the tests here do that.
 
 ### 2. Write the tutorial
 
