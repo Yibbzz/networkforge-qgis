@@ -340,10 +340,13 @@ class Route:
         return f"Route({self.metres:.0f} m, {self.seconds} s)"
 
 
-def route(profile, start, end, feedback):
-    """The Network Analyst plugin's route between two points (profile: auto, ...)."""
+def route(profile, start, end, feedback, **settings):
+    """The Network Analyst plugin's route between two points (profile: auto, ...).
+
+    `settings` are the tool's own, such as height=3.4 for the vehicle.
+    """
     routes = run_tool(f"valhalla_directions_{profile}", feedback,
-                      INPUT_LAYER_1=point_layer(start, end))
+                      INPUT_LAYER_1=point_layer(start, end), **settings)
     assert len(routes) == 1
     return Route(routes[0])
 
@@ -383,8 +386,8 @@ def scenario(provider, real_engine, network_analyst, valhalla_programs, feedback
             return valhalla_serving(pbf, tmp_path / f"graph{Scenario._graphs}",
                                     valhalla_programs)
 
-        def route(self, profile, start, end):
-            return route(profile, start, end, feedback)
+        def route(self, profile, start, end, **settings):
+            return route(profile, start, end, feedback, **settings)
 
         def before_and_after(self, built, *trips):
             """Each (profile, start, end) trip on the before and the after network."""
@@ -500,6 +503,51 @@ def test_a_lower_speed_limit_makes_the_drive_slower_not_longer(scenario):
 
     assert between(before, DIRECT) and between(after, DIRECT)
     assert after.seconds > before.seconds * 1.2
+
+
+def test_a_cycle_track_draws_cyclists_off_the_shorter_street(scenario):
+    # Two new streets between the same two corners: straight across the
+    # block (about 245 m for the trip), and one that bulges out (about
+    # 276 m). Only what is on the longer one can send a cyclist along it.
+    corner, far_corner = (-3.6988, 40.4009), (-3.6976, 40.4018)
+    bulge = (-3.69862, 40.401665)
+    start, end = (-3.6994, 40.4009), (-3.6970, 40.4018)   # half a block before, after
+    shorter, longer = (235, 258), (262, 290)
+
+    def routes(**on_the_longer):
+        built = scenario.build(line_layer(
+            ([corner, far_corner], "residential"),
+            ([corner, bulge, far_corner], "residential", *on_the_longer.values()),
+            fields=("highway", *on_the_longer)))
+        with scenario.valhalla(built["AFTER_OSM"]):
+            return [scenario.route(profile, start, end)
+                    for profile in ("bicycle", "auto", "pedestrian")]
+
+    for route in routes():
+        assert between(route, shorter)
+
+    cycling, driving, walking = routes(cycleway="track")
+    assert between(cycling, longer)
+    assert between(driving, shorter) and between(walking, shorter)
+
+
+def test_a_low_bridge_turns_back_a_tall_bus_only(scenario):
+    # Esri's tutorial makes a "Tour Bus" travel mode for a bus 11 feet
+    # (3.35 m) high. Here the limit is a field on the street and the
+    # vehicle's height a setting of the Network Analyst plugin's bus tool.
+    built = scenario.build(edit_layer(maxheight="3"))
+
+    with scenario.valhalla(built["AFTER_OSM"]):
+        tour_bus = scenario.route("bus", A, B, height=3.35)
+        minibus = scenario.route("bus", A, B, height=2.8)
+        untouched_bus = scenario.route("bus", A, B)   # the plugin's own 1.6 m
+        car = scenario.route("auto", A, B)
+        lorry = scenario.route("truck", A, B, height=3.35)
+
+    assert between(tour_bus, DETOUR)
+    assert between(lorry, DETOUR)
+    for fits in (minibus, untouched_bus, car):
+        assert between(fits, DIRECT)
 
 
 def test_a_banned_turn_is_obeyed_by_cars_not_walkers(scenario):

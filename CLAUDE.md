@@ -26,6 +26,28 @@ So: don't add routing tools or a hosted web app here (the Network
 Analyst plugin covers that), and treat "the PBF works in Valhalla" as
 the output that matters most.
 
+### The PBF is the product; the GeoPackage is a nice-to-have (decided 2026-10-13)
+
+NetworkForge is for making OSM PBF files that proper routers read. The
+Before / After GeoPackage layers are a second thought: a way to look at
+the result in QGIS and to use QGIS's own simple network tools. They
+only say whether a mode is allowed, in which direction and at what
+speed. A router reading the PBF also knows cycle lanes and tracks,
+surfaces, turn restrictions, barriers and vehicle sizes.
+
+What follows from that:
+- A feature is done when a routing test on the PBF proves it
+  (`tests/test_network_analyst.py` here, `tests/valhalla` in the
+  engine). GeoPackage columns and styling follow only where cheap.
+- Don't hold back or bend a PBF feature because the GeoPackage can't
+  show it, and don't ask the engine for GeoPackage columns to mirror
+  what routers already read from tags.
+- In docs and tool help, lead with the PBF files and routing; present
+  the layers as a preview. Say plainly where the layers can't show a
+  change (a cycle lane, a banned turn, a bollard).
+- Time spent on the GeoPackage side (new columns, QGIS "Service area"
+  recipes, styling beyond what exists) needs the user's say-so first.
+
 ## Hard rules
 
 - **No network logic here.** Tag rules, snapping, OSM download, export:
