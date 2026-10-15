@@ -6,3 +6,11 @@ coverage.xml
 .venv/
 *.zip
 .qgis-settings/
+docs/tutorial-data/output/
+docs/images/*.log
+
+# Local only
+docs/roadmap.md
+# Pictures the tutorial script makes that the tutorial doesn't use
+docs/images/tutorial-bridge-draw.png
+docs/images/tutorial-bridge-stage*.png

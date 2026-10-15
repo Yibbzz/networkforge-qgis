@@ -19,7 +19,7 @@ own data, then analyse it. Here that is two tools: NetworkForge makes
 the network and writes OSM PBF files; routing.earth's **QGIS Network
 Analyst** plugin (Valhalla, run locally through `pyvalhalla`) builds a
 graph from the PBF and does the routing. The third aim is documentation
-that is better than Esri's. `docs/roadmap.md` has the plan and the
+that is better than Esri's. `docs/roadmap.md` (local only, ignored by git) has the plan and the
 ordered next steps; keep it up to date.
 
 So: don't add routing tools or a hosted web app here (the Network
@@ -381,6 +381,41 @@ networkforge-qgis/
   (`docs/images/example-*.png`, used by `docs/examples.md`). Rerun it
   when styling or an example changes; the numbers in `docs/examples.md`
   are printed by it and must be kept in step by hand.
+- `docs/tutorial.md` is **the user's own writing**: fix formatting only
+  (broken lists, links, image paths), never change a word without being
+  asked. It uses `docs/images/tutorial-bridge-area.webp` and
+  `tutorial-qgis-01..16.webp` (WebP at quality 85: a fifth of the PNG size), and links to
+  `docs/tutorial-data/reading-bridge.gpkg`. The other pictures the
+  tutorial script makes are in `.gitignore`.
+- `scripts/make_tutorial_example.py` makes the tutorial's worked example:
+  getting to work over a new Thames bridge east of Reading, in three
+  stages (the bridge; the business park's road opened by removing two
+  barriers and raising its limit; a bollard on Sonning Bridge). It
+  writes `docs/images/tutorial-bridge-*.png` and
+  `docs/tutorial-data/reading-bridge.gpkg`, and prints the trip times
+  the tutorial quotes. It downloads the streets through the engine
+  (Overpass) and the rivers from the Overpass API, so it needs the
+  internet, and it finds the park's streets by OpenStreetMap way id:
+  if OpenStreetMap changes there, its `assert` says so. The scheme is
+  invented, not the official design: say so wherever the pictures are
+  used.
+- `scripts/make_tutorial_screenshots.py` takes the tutorial's QGIS
+  screenshots (`docs/images/tutorial-qgis-*.webp`): real QGIS desktop on
+  a virtual screen (`xvfb-run`; QGIS 3.34 crashes with
+  `QT_QPA_PLATFORM=offscreen` here), in a profile of its own
+  (`--profiles-path`, never the user's) holding this plugin and the
+  Network Analyst plugin, does the steps in
+  `scripts/tutorial_screens_in_qgis.py`. Run `make_tutorial_example.py`
+  first. Things learned: don't filter a GeoPackage layer in place
+  (`setSubsetString`), the file's other layers then load without a CRS;
+  give a form made from Python its extent as text with `[EPSG:4326]`,
+  not as a layer. The routing screenshots (07-11 and 15-16) go through the
+  Network Analyst plugin's own panel, as a reader would: its settings
+  dialog, "From PBF" for a graph of each PBF, its local server, the car,
+  two waypoints and Execute. pyvalhalla is copied from the tests' cache
+  to `<profile>/valhalla/pyvalhalla`, where their "Install" button puts
+  it; stop their server and wait for the process to end before starting
+  it on another graph (the start/stop button is one toggle).
 - `scripts/make_form_images.py` grabs the tools' forms from QGIS desktop
   running off-screen (`docs/images/*-form.png`). Rerun it whenever a
   tool's parameters or help text change.
