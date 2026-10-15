@@ -266,9 +266,12 @@ def render(layers, extent, crs, labels=(), size=PANEL, dpi=120):
     return image
 
 
-def figure(name, title, panels, caption):
-    """Save panels [(heading, note, image), ...] side by side with a title."""
-    gap, margin, top = 24, 24, 100
+def figure(name, title, panels, caption, extension="png"):
+    """Save panels [(heading, note, image), ...] side by side with a title.
+
+    With an empty title the picture starts at the panels' headings.
+    """
+    gap, margin, top = 24, 24, 100 if title else 50
     size = panels[0][2].size()
     width = margin * 2 + size.width() * len(panels) + gap * (len(panels) - 1)
     image = QImage(width, top + size.height() + 56, QImage.Format.Format_RGB32)
@@ -277,24 +280,27 @@ def figure(name, title, panels, caption):
     painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
     painter.setPen(INK)
     painter.setFont(font(24, bold=True))
-    painter.drawText(margin, 40, title)
+    if title:
+        painter.drawText(margin, 40, title)
     for i, (heading, note, panel) in enumerate(panels):
         x = margin + i * (size.width() + gap)
         painter.setPen(INK)
         painter.setFont(font(18, bold=True))
-        painter.drawText(x, 76, heading)
+        painter.drawText(x, top - 24, heading)
         offset = painter.fontMetrics().horizontalAdvance(heading) + 18
         painter.setPen(MUTED)
         painter.setFont(font(15))
-        painter.drawText(x + offset, 76, note)
+        painter.drawText(x + offset, top - 24, note)
         painter.drawImage(x, top, panel)
     painter.setPen(MUTED)
     painter.setFont(font(13))
     painter.drawText(margin, top + size.height() + 36, caption)
     painter.end()
     IMAGES.mkdir(parents=True, exist_ok=True)
-    image.save(str(IMAGES / f"{name}.png"))
-    print("wrote", IMAGES / f"{name}.png")
+    path = IMAGES / f"{name}.{extension}"
+    # WebP keeps the docs small; 85 looks the same as the PNG at a fifth of the size.
+    image.save(str(path), None, 85 if extension == "webp" else -1)
+    print("wrote", path)
 
 
 class Notes(QgsProcessingFeedback):
