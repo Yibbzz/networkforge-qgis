@@ -43,6 +43,8 @@ def test_guide_url_points_at_the_pinned_version():
         f"{docs}/tagging-guide.md#fixing-tag-errors"
     )
     assert engine.guide_url("osm-data.md#large-areas") == f"{docs}/osm-data.md#large-areas"
+    # Engines after v1.0.1 name the page: the tagging guide became network-rules.md.
+    assert engine.guide_url("network-rules.md#presets") == f"{docs}/network-rules.md#presets"
 
 
 def test_bundled_info_is_for_the_pinned_version():

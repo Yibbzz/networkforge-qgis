@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Links to the engine's tagging guide now go to its new name,
+  [network rules](https://github.com/Yibbzz/networkforge/blob/main/docs/network-rules.md).
+  Error links follow the page the engine names, so they reach the new
+  page once the plugin uses an engine version that has it.
+
 ## 0.4.1 - 2026-10-11
 
 - New guide: [Moving an ArcGIS street network to QGIS](docs/migrating-from-arcgis.md).
