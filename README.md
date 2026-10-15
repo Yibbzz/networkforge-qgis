@@ -33,7 +33,8 @@ steps, on top of OpenStreetMap:
 
 Step 1 works today, and step 2 is
 [tested automatically](#tested-with-the-network-analyst-plugin) with the
-Network Analyst plugin on QGIS 3 and QGIS 4. Step 3 is next.
+Network Analyst plugin on QGIS 3 and QGIS 4. Step 3 has started with
+[the tutorial](docs/tutorial.md).
 
 ## What it does
 
@@ -61,6 +62,18 @@ OSM file:
 ![The Build standalone network form: network layer, points layer, travel type, speed limit, where lines join and output folder](docs/images/standalone-form.png)
 
 Map data in the images © OpenStreetMap contributors (ODbL).
+
+### Tutorial
+
+New to the plugin? [The tutorial](docs/tutorial.md) takes you through a
+whole scheme in QGIS, step by step with screenshots: a commute across
+the Thames in Reading, a new bridge to shorten it, the changes the
+streets around it need before traffic will use it, and a bollard on an
+old bridge. Each stage is routed on before and after with the Network
+Analyst plugin, and the data to follow along is
+[included](docs/tutorial-data/reading-bridge.gpkg).
+
+![The drive to work routed by the Network Analyst plugin over the new bridge](docs/images/tutorial-qgis-11-analyst-route-after.webp)
 
 ### Examples
 
