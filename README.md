@@ -33,8 +33,7 @@ steps, on top of OpenStreetMap:
 
 Step 1 works today, and step 2 is
 [tested automatically](#tested-with-the-network-analyst-plugin) with the
-Network Analyst plugin on QGIS 3 and QGIS 4. Step 3 is next; see the
-[roadmap](docs/roadmap.md) for where things stand.
+Network Analyst plugin on QGIS 3 and QGIS 4. Step 3 is next.
 
 ## What it does
 
@@ -173,8 +172,8 @@ way id changes that street instead of adding a line:
    network; removed streets are in the Before network only.
 
 The engine's
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.1/docs/tagging-guide.md#changing-existing-streets)
-has the details.
+[network rules](https://github.com/Yibbzz/networkforge/blob/main/docs/network-rules.md#changing-existing-streets)
+give the details.
 
 ### Banning or forcing a turn
 
@@ -193,7 +192,7 @@ Turn restrictions are written to the PBF file, where routers such as
 Valhalla obey them. The QGIS layers can't show them, so QGIS's own
 network tools ignore them. For a rule that applies to lorries or buses
 only, and for exceptions, see the
-[tagging guide](https://github.com/Yibbzz/networkforge/blob/v1.0.1/docs/tagging-guide.md#turn-restrictions).
+[network rules](https://github.com/Yibbzz/networkforge/blob/main/docs/network-rules.md#turn-restrictions).
 
 ### Bollards, traffic signals and crossings
 

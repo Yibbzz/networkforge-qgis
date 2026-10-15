@@ -404,8 +404,9 @@ def bundled_info():
 def guide_url(guide):
     """The web address of an engine guide, for the pinned version.
 
-    `guide` is what an error event carries: an anchor in the tagging
-    guide, or "<file>.md#anchor" for another document.
+    `guide` is what an error event carries: "<file>.md#anchor"
+    ("network-rules.md#presets"), or, from engines up to v1.0.1, a bare
+    anchor in what was then the tagging guide.
     """
     docs = f"{ENGINE_REPO}/blob/v{ENGINE_VERSION}/docs"
     if ".md" in guide:

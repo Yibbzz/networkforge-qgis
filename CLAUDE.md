@@ -79,7 +79,8 @@ What follows from that:
 6. Result: **Before** and **After** layers loaded and styled (custom
    edges highlighted), PBF files saved for routers. Warnings are listed
    and the features concerned highlighted; on error, the broken features
-   are selected and the message links to the engine's tagging guide.
+   are selected and the message links to the engine's network rules
+   (`docs/network-rules.md`, formerly `tagging-guide.md`).
 
 ## Architecture
 
@@ -174,9 +175,12 @@ JSON events on stdout (stderr is human-readable log text):
 {"event": "error", "type": "InvalidTagsError", "message": "...", "guide": "fixing-tag-errors",
  "issues": [{"feature": 17, "message": "maxspeed='fast' is not a valid OSM speed"}]}
 ```
-- `guide` is an anchor in the engine's `docs/tagging-guide.md`, or
-  `"<file>.md#anchor"` for another doc in its `docs/`. Link to the
-  GitHub copy for the pinned version.
+- `guide` is `"<file>.md#anchor"` in the engine's `docs/`
+  (`network-rules.md#fixing-tag-errors`), or, from engines up to
+  v1.0.1, a bare anchor in `docs/tagging-guide.md` (what that page was
+  called then). Link to the GitHub copy for the pinned version. Docs
+  for users link to `blob/main/docs/network-rules.md` until an engine
+  release that has it is pinned.
 - `issues[].feature` / `warning.features` are `--id-field` values
   (feature `null` = not about one feature).
 
