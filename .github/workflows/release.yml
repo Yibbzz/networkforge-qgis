@@ -2,8 +2,15 @@ name: Release
 
 # Runs when a version tag such as v0.1.0 is pushed: builds the plugin zip,
 # attaches it and a plugins.xml (a plugin repository QGIS can read) to a
-# GitHub release, and - once the OSGEO_USERNAME and
-# OSGEO_PASSWORD secrets are set - publishes it to plugins.qgis.org.
+# GitHub release, and publishes it to plugins.qgis.org once the
+# QGIS_PLUGIN_TOKEN secret is set.
+#
+# plugins.qgis.org: the first version is uploaded by hand through its web
+# form (https://plugins.qgis.org/plugins/add/), which creates the plugin.
+# After that, the plugin's page there has a "Tokens" tab: make a token and
+# save it as the repository secret QGIS_PLUGIN_TOKEN. Every tag then
+# uploads the new version. (OSGEO_USERNAME / OSGEO_PASSWORD still work as
+# the older way in.)
 on:
   push:
     tags: ["v*"]
@@ -31,16 +38,18 @@ jobs:
       - name: Package and publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QGIS_PLUGIN_TOKEN: ${{ secrets.QGIS_PLUGIN_TOKEN }}
           OSGEO_USERNAME: ${{ secrets.OSGEO_USERNAME }}
           OSGEO_PASSWORD: ${{ secrets.OSGEO_PASSWORD }}
         run: |
           version="${GITHUB_REF_NAME#v}"
-          if [ -n "$OSGEO_USERNAME" ]; then
-            qgis-plugin-ci release "$version" --release-tag "$GITHUB_REF_NAME" \
-              --github-token "$GITHUB_TOKEN" --create-plugin-repo \
-              --osgeo-username "$OSGEO_USERNAME" --osgeo-password "$OSGEO_PASSWORD"
+          release=(qgis-plugin-ci release "$version" --release-tag "$GITHUB_REF_NAME"
+                   --github-token "$GITHUB_TOKEN" --create-plugin-repo)
+          if [ -n "$QGIS_PLUGIN_TOKEN" ]; then
+            "${release[@]}" --qgis-token "$QGIS_PLUGIN_TOKEN"
+          elif [ -n "$OSGEO_USERNAME" ]; then
+            "${release[@]}" --osgeo-username "$OSGEO_USERNAME" --osgeo-password "$OSGEO_PASSWORD"
           else
-            echo "No OSGeo account set: attaching the zip to the GitHub release only."
-            qgis-plugin-ci release "$version" --release-tag "$GITHUB_REF_NAME" \
-              --github-token "$GITHUB_TOKEN" --create-plugin-repo
+            echo "No plugins.qgis.org token set: attaching the zip to the GitHub release only."
+            "${release[@]}"
           fi
