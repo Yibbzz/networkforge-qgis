@@ -2,10 +2,33 @@
 
 ## Unreleased
 
+## 0.5.0 - 2026-10-16
+
+- The plugin now uses NetworkForge engine v1.1.0 (was v1.0.1); the
+  first tool you run replaces the installed engine. What it brings:
+  - A warning when a downloaded OSM file doesn't cover the whole area
+    you build. A region's extract stops at its boundary, so a box
+    reaching across it used to lose streets without a word.
+  - `ramp`, `ramp:wheelchair`, `ramp:stroller` and `ramp:bicycle` are
+    written to the PBF files (they were dropped) and their values are
+    checked.
+  - A warning names fields that look like OpenStreetMap tags but that
+    NetworkForge doesn't write, so routers won't see them.
+  - Fixes to how lines join: bridges, tunnels and lines on another
+    `layer` no longer join a road they cross at a vertex, lines beside
+    a dead end join the right street, one-way changes to looped streets
+    and via-way turn restrictions are kept right, and outputs that would
+    overwrite the input are refused. Some of these changed routes in
+    Valhalla.
+- New [tutorial](docs/tutorial.md): a new Thames bridge in Reading,
+  step by step with screenshots and the data to follow along.
 - Links to the engine's tagging guide now go to its new name,
-  [network rules](https://github.com/Yibbzz/networkforge/blob/main/docs/network-rules.md).
-  Error links follow the page the engine names, so they reach the new
-  page once the plugin uses an engine version that has it.
+  [network rules](https://github.com/Yibbzz/networkforge/blob/v1.1.0/docs/network-rules.md),
+  for the engine version the plugin uses.
+- The README is much shorter and points to the tutorial and examples.
+- The Network Analyst tests now also route on a cycle track.
+- The plugin's tags in the plugin list now include cycling, planning and
+  network analysis.
 
 ## 0.4.1 - 2026-10-11
 

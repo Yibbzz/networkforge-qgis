@@ -77,7 +77,7 @@ layer can change or remove existing streets and ban turns, and a second,
 points layer adds bollards, signals and crossings.
 
 What the fields mean, where lines join, and how to do each of these is
-in the engine's **[network rules](https://github.com/Yibbzz/networkforge/blob/main/docs/network-rules.md)**.
+in the engine's **[network rules](https://github.com/Yibbzz/networkforge/blob/v1.1.0/docs/network-rules.md)**.
 When a line is wrong, the tool selects it and links to the part of
 those rules that explains why.
 

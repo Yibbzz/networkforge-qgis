@@ -1,6 +1,6 @@
 {
  "event": "info",
- "version": "1.0.1",
+ "version": "1.1.0",
  "presets": {
   "motorway": {
    "tags": {
@@ -248,6 +248,10 @@
   "oneway:bus",
   "oneway:psv",
   "psv",
+  "ramp",
+  "ramp:bicycle",
+  "ramp:stroller",
+  "ramp:wheelchair",
   "ref",
   "route",
   "sac_scale",
@@ -407,6 +411,34 @@
   ],
   "toll": [
    "no",
+   "yes"
+  ],
+  "ramp": [
+   "automatic",
+   "manual",
+   "no",
+   "separate",
+   "yes"
+  ],
+  "ramp:wheelchair": [
+   "automatic",
+   "manual",
+   "no",
+   "separate",
+   "yes"
+  ],
+  "ramp:stroller": [
+   "automatic",
+   "manual",
+   "no",
+   "separate",
+   "yes"
+  ],
+  "ramp:bicycle": [
+   "automatic",
+   "manual",
+   "no",
+   "separate",
    "yes"
   ],
   "junction": [

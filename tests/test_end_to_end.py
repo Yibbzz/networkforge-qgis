@@ -25,7 +25,10 @@ from qgis.core import (
 pytestmark = pytest.mark.engine
 
 GRID = Path(__file__).parent / "data" / "grid.osm"
-EXTENT = "-3.701,-3.695,40.399,40.404 [EPSG:4326]"
+EXTENT = "-3.7001,-3.6963,40.3999,40.4028 [EPSG:4326]"   # just around the grid
+# Room for lines and points outside the grid. grid.osm doesn't cover it,
+# so the engine also warns that the OSM file is missing part of the area.
+BEYOND_THE_GRID = "-3.701,-3.695,40.399,40.404 [EPSG:4326]"
 # Corner to corner across the grid, and a line out in the fields.
 DIAGONAL = [(-3.7000, 40.4000), (-3.6964, 40.4027)]
 FAR_AWAY = [(-3.6952, 40.4035), (-3.6951, 40.4038)]
@@ -132,11 +135,12 @@ def test_build_warns_about_and_selects_a_line_that_does_not_connect(
     connected, stray = sorted(f.id() for f in plan.getFeatures())
 
     processing.run("networkforge:build_network", {
-        "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(GRID),
+        "EXTENT": BEYOND_THE_GRID, "CUSTOM": plan, "OSM_FILE": str(GRID),
         "OUTPUT_FOLDER": str(tmp_path / "out"),
     }, feedback=feedback)
 
     assert any("don't connect" in warning for warning in feedback.warnings)
+    assert any("grid.osm has no streets in about" in warning for warning in feedback.warnings)
     assert plan.selectedFeatureIds() == [stray]
 
 
@@ -147,12 +151,12 @@ def test_build_stops_on_a_bad_attribute_and_selects_the_feature(
 
     with pytest.raises(QgsProcessingException) as raised:
         processing.run("networkforge:build_network", {
-            "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(GRID),
+            "EXTENT": BEYOND_THE_GRID, "CUSTOM": plan, "OSM_FILE": str(GRID),
             "OUTPUT_FOLDER": str(tmp_path / "out"),
         }, feedback=feedback)
 
     assert f"feature {bad}: maxspeed='fast'" in str(raised.value)
-    assert real_engine.guide_url("fixing-tag-errors") in str(raised.value)
+    assert real_engine.guide_url("network-rules.md#fixing-tag-errors") in str(raised.value)
     assert plan.selectedFeatureIds() == [bad]
     assert not (tmp_path / "out" / "after.gpkg").exists()
 
@@ -311,7 +315,7 @@ def test_build_refuses_a_turn_restriction_that_is_on_no_junction(
         }, feedback=feedback)
 
     assert "doesn't pass through a junction" in str(raised.value)
-    assert real_engine.guide_url("turn-restrictions") in str(raised.value)
+    assert real_engine.guide_url("network-rules.md#turn-restrictions") in str(raised.value)
     assert plan.selectedFeatureIds() == [bad]
 
 
@@ -380,7 +384,7 @@ def test_a_point_that_is_not_on_a_street_is_named_and_selected(
 
     try:
         processing.run("networkforge:build_network", {
-            "EXTENT": EXTENT, "CUSTOM": plan, "POINTS": points, "OSM_FILE": str(GRID),
+            "EXTENT": BEYOND_THE_GRID, "CUSTOM": plan, "POINTS": points, "OSM_FILE": str(GRID),
             "OUTPUT_FOLDER": str(tmp_path / "out"),
         }, feedback=feedback)
         said = "\n".join(feedback.warnings)

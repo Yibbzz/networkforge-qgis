@@ -49,7 +49,7 @@ Open Active Profile Folder**).
       four tools: Build scenario network, Build standalone network,
       Check custom network layer, Engine information.
 - [ ] **1.3** Run **Engine information**. The log ends with
-      `NetworkForge engine version: 1.0.1`. The first time, it installs
+      `NetworkForge engine version: 1.1.0`. The first time, it installs
       the engine first: a few minutes, with progress in the log.
       Time it took: ______
 

@@ -56,7 +56,7 @@ What follows from that:
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v1.0.1`) in one constant. The
+- **Pin the engine version** (currently `v1.1.0`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -94,7 +94,7 @@ What follows from that:
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.0.1.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.1.0.zip"`
   (with `uv venv --python 3.12 --python-preference only-managed` - uv
   downloads its own Python, so QGIS's Python version doesn't matter.
   Without `only-managed` uv reuses a matching Python it finds; the
@@ -134,7 +134,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v1.0.1; v1.0.0 was the first stable one)
+## Engine contract (v1.1.0; v1.0.0 was the first stable one)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
@@ -179,8 +179,8 @@ JSON events on stdout (stderr is human-readable log text):
   (`network-rules.md#fixing-tag-errors`), or, from engines up to
   v1.0.1, a bare anchor in `docs/tagging-guide.md` (what that page was
   called then). Link to the GitHub copy for the pinned version. Docs
-  for users link to `blob/main/docs/network-rules.md` until an engine
-  release that has it is pinned.
+  for users link to `blob/v<pinned>/docs/network-rules.md`; change
+  those links when the engine is upgraded.
 - `issues[].feature` / `warning.features` are `--id-field` values
   (feature `null` = not about one feature).
 
@@ -233,6 +233,16 @@ or node, via-way turn restrictions (a turn line through two junctions),
 and warnings for unknown values of `surface`, `sidewalk`, ... (`info`:
 `tag_values`). The CLI, exit codes and JSON events are now stable: fields
 may be added, none removed without a new major version.
+
+Since v1.1.0 (all events and fields, nothing the plugin must do):
+a `warning` event when a local OSM file (`--osm-source`) doesn't cover
+the whole area, with `gaps`, a `[west, south, east, north]` box for
+each uncovered part (the plugin lists the message; drawing the boxes
+would be a nice extra); a warning naming fields that look like OSM tags
+but aren't written; `ramp`, `ramp:wheelchair`, `ramp:stroller`,
+`ramp:bicycle` are written and checked (`info`'s `tag_keys` /
+`tag_values`); outputs that would overwrite an input or each other, or
+a missing output folder, are refused as input errors.
 
 Since v0.11.1 attributes that aren't tags keep their type in the
 GeoPackage, and text `True` / `False` is no longer read as `yes` / `no`
