@@ -1,0 +1,12 @@
+# The plugin runs its engine, NetworkForge, as a separate program: the
+# engine needs libraries QGIS's own Python doesn't have, so it lives in
+# its own environment in the QGIS profile folder (engine.py).
+#
+# B404 (import subprocess) and B603 (subprocess call without a shell)
+# flag exactly that. Every call passes a list of arguments, never a
+# shell string (no shell=True). The programs are fixed: QGIS's own
+# Python (to pip-install uv), uv (to install the engine) and the
+# engine. The user's choices (files, area, tags) only ever reach the
+# engine as separate arguments.
+[bandit]
+skips = B404,B603

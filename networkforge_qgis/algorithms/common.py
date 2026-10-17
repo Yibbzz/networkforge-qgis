@@ -342,7 +342,7 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
                     if name != ID_FIELD and fields.indexOf(name) >= 0:
                         out[name] = value
                 out[ID_FIELD] = self._export_id(feature.id(), is_point)
-                if not sink.addFeature(out, QgsFeatureSink.FastInsert):
+                if not sink.addFeature(out, QgsFeatureSink.Flag.FastInsert):
                     raise QgsProcessingException(
                         f"Could not prepare feature {feature.id()} for the engine: "
                         f"{sink.lastError()}"

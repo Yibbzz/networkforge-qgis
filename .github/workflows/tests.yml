@@ -48,6 +48,29 @@ jobs:
           name: coverage
           path: coverage.xml
 
+  # What plugins.qgis.org checks on upload, so a version it would block
+  # fails here first: bandit, detect-secrets and flake8's critical rules
+  # (they block), and the Qt6 check (warnings on the plugin's page).
+  plugin-checks:
+    name: plugins.qgis.org checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install bandit detect-secrets flake8
+      - run: scripts/plugin_checks.sh
+
+  qt6:
+    name: Qt6 check
+    runs-on: ubuntu-latest
+    container:
+      image: qgis/qgis:latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: scripts/qt6_check.sh
+
   # Most users are on Windows, where the engine install is the part most
   # likely to differ. QGIS is installed from the same installer they use
   # (qgis.org's, fetched by Chocolatey) and the tests run in its Python.

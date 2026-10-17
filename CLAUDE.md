@@ -444,8 +444,19 @@ networkforge-qgis/
 
 ## Packaging
 - `qgis-plugin-ci` builds the zip from `metadata.txt` and publishes to
-  plugins.qgis.org on a version tag (needs an OSGeo account). Start as
-  `experimental=True`.
+  plugins.qgis.org on a version tag (secret `QGIS_PLUGIN_TOKEN`). Start
+  as `experimental=True`.
+- plugins.qgis.org scans every upload and **blocks** a version on a
+  critical bandit or detect-secrets finding (0.5.0 was blocked for
+  bandit B603, "subprocess call"); a blocked version can only be
+  replaced by a new one. `scripts/plugin_checks.sh` runs the same tools
+  (newest versions, as the site does) in `tests.yml` and before
+  `release.yml` publishes. `networkforge_qgis/.bandit` skips B404 / B603
+  with the reason: starting the engine as a program is the design.
+  Their Qt6 check (warnings only) is QGIS's `pyqt5_to_pyqt6.py`;
+  `scripts/qt6_check.sh` runs it in `qgis/qgis:latest`. Write QGIS enum
+  values with their enum's name (`QgsFeatureSink.Flag.FastInsert`):
+  QGIS 3.34 accepts that too.
 
 ## Milestones (do in order; each ends with something that visibly works)
 1. **Skeleton** - plugin loads; "NetworkForge" appears in the Processing Toolbox.

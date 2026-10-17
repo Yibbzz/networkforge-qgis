@@ -116,7 +116,11 @@ fast tests. [`manual-test/`](manual-test/README.md) has a checklist for
 what the automated tests can't see.
 
 Pushing a version tag such as `v0.5.0` builds the plugin zip and
-publishes a GitHub release (`.github/workflows/release.yml`).
+publishes a GitHub release (`.github/workflows/release.yml`). Every push
+and every release first runs the checks plugins.qgis.org runs on an
+upload (`scripts/plugin_checks.sh`: bandit, detect-secrets, flake8; and
+`scripts/qt6_check.sh` for Qt6), so a version it would block fails here
+first.
 
 ## Limitations
 

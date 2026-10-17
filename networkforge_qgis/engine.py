@@ -221,7 +221,7 @@ def _unpack_uv(name, data):
     _uv_dir().mkdir(parents=True, exist_ok=True)
     target = _uv_dir() / program
     target.write_bytes(content)
-    target.chmod(0o755)
+    target.chmod(0o700)   # only the user who installed it runs it
     return True
 
 

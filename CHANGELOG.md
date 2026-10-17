@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.5.1 - 2026-10-17
+
+- Passes plugins.qgis.org's checks, which blocked 0.5.0: a `.bandit`
+  file explains why the plugin starts programs (its engine runs as a
+  separate program), QGIS enum names are written in full for Qt6, and
+  the downloaded uv program can only be run by the user who installed it.
+- The same checks now run on every change and before every release, so a
+  version plugins.qgis.org would block isn't published.
+
 ## 0.5.0 - 2026-10-16
 
 - The plugin now uses NetworkForge engine v1.1.0 (was v1.0.1); the

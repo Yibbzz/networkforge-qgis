@@ -20,11 +20,11 @@ try:
     FLAG_ADVANCED = Qgis.ProcessingParameterFlag.Advanced
     SKIP_GEOMETRY_CHECKS = Qgis.ProcessingFeatureSourceFlag.SkipGeometryValidityChecks
 except AttributeError:  # QGIS 3.34
-    SOURCE_VECTOR_LINE = QgsProcessing.TypeVectorLine
-    SOURCE_VECTOR_POINT = QgsProcessing.TypeVectorPoint
-    NUMBER_DOUBLE = QgsProcessingParameterNumber.Double
-    FLAG_ADVANCED = QgsProcessingParameterDefinition.FlagAdvanced
-    SKIP_GEOMETRY_CHECKS = QgsProcessingFeatureSource.FlagSkipGeometryValidityChecks
+    SOURCE_VECTOR_LINE = QgsProcessing.SourceType.TypeVectorLine
+    SOURCE_VECTOR_POINT = QgsProcessing.SourceType.TypeVectorPoint
+    NUMBER_DOUBLE = QgsProcessingParameterNumber.Type.Double
+    FLAG_ADVANCED = QgsProcessingParameterDefinition.Flag.FlagAdvanced
+    SKIP_GEOMETRY_CHECKS = QgsProcessingFeatureSource.Flag.FlagSkipGeometryValidityChecks
 
 
 def whole_number_field(name):
@@ -45,4 +45,4 @@ try:
 except AttributeError:  # QGIS 3.34
     from qgis.core import QgsWkbTypes
 
-    ANY_GEOMETRY = QgsWkbTypes.Unknown
+    ANY_GEOMETRY = QgsWkbTypes.Type.Unknown

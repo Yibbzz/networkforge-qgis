@@ -16,7 +16,20 @@ on:
     tags: ["v*"]
 
 jobs:
+  # The checks that would get the version blocked on plugins.qgis.org
+  # (see scripts/plugin_checks.sh): nothing is published if they fail.
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install bandit detect-secrets flake8
+      - run: scripts/plugin_checks.sh
+
   release:
+    needs: checks
     runs-on: ubuntu-latest
     permissions:
       contents: write
