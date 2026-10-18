@@ -245,10 +245,11 @@ MODES = {"transit": 0, "walk": 1, "bike": 2, "car": 3}   # Easy-R5's MODE choice
 
 # ----------------------------------------------------------- the tutorial
 
-def service_area(network, departure, minutes, feedback):
+def service_area(network, departure, minutes, folder, feedback):
     """Easy-R5's transit service area (polygon) from just north of downtown."""
     start = at(1, 0.2)   # 20 m from the city bus's first stop
-    result = processing.run("easyr5:generateisochrones", {
+    output = folder / f"service-area-{departure.replace(':', '')}.gpkg"
+    processing.run("easyr5:generateisochrones", {
         "NETWORK": network, "ORIGINS": point_layer((*start, "downtown")), "ORIGIN_ID_FIELD": "id",
         "MODE": 0,                         # transit and walking
         "DATE": DATE, "DEPARTURE_TIME": departure,
@@ -256,11 +257,11 @@ def service_area(network, departure, minutes, feedback):
         "CUTOFFS": str(minutes), "ESTIMATE_FIRST": False,
         # Easy-R5 sizes its grid of destinations from the longest trip.
         "MAX_TRIP_DURATION": minutes + 1, "GRID_SPACING": 50,
-        "OUTPUT_LAYER": "TEMPORARY_OUTPUT",
+        "OUTPUT_LAYER": str(output),
     }, feedback=feedback)
-    layer = result["OUTPUT_LAYER"]
-    layer = layer if isinstance(layer, QgsVectorLayer) else QgsVectorLayer(layer, "area", "ogr")
-    return QgsGeometry.unaryUnion([f.geometry() for f in layer.getFeatures()])
+    polygons = [f.geometry() for f in QgsVectorLayer(str(output), "area", "ogr").getFeatures()]
+    assert polygons, f"Easy-R5 drew no service area for {departure}"
+    return QgsGeometry.unaryUnion(polygons)
 
 
 def test_esri_public_transit_tutorial_peak_and_off_peak_service_areas(
@@ -282,8 +283,8 @@ def test_esri_public_transit_tutorial_peak_and_off_peak_service_areas(
     }, feedback=feedback)["NETWORK_DAT"]
 
     # 3. Service areas at 5:15 pm and at 2:00 pm.
-    peak = service_area(network, "17:15", 15, feedback)
-    off_peak = service_area(network, "14:00", 15, feedback)
+    peak = service_area(network, "17:15", 15, tmp_path, feedback)
+    off_peak = service_area(network, "14:00", 15, tmp_path, feedback)
 
     def reaches(area, col, row):
         return area.contains(QgsGeometry.fromPointXY(QgsPointXY(*at(col, row))))
