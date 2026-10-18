@@ -113,6 +113,7 @@ jobs:
         run: >
           & $env:QGIS_PYTHON -m pytest -v
           --ignore=tests/test_network_analyst.py
+          --ignore=tests/test_easy_r5.py
           --basetemp="$env:RUNNER_TEMP\pytest"
 
       # A step of its own, so that a red job shows at a glance whether
@@ -125,6 +126,16 @@ jobs:
           & $env:QGIS_PYTHON -m pytest -v -s
           tests/test_network_analyst.py
           --basetemp="$env:RUNNER_TEMP\pytest-routing"
+
+      # Esri's public transit tutorial with the Easy-R5 plugin (R5, Java).
+      - name: Public transit with the Easy-R5 plugin
+        if: ${{ !cancelled() }}
+        env:
+          NF_TEST_ENGINE_DIR: ${{ runner.temp }}\Zoë Müller\networkforge
+        run: >
+          & $env:QGIS_PYTHON -m pytest -v -s
+          tests/test_easy_r5.py
+          --basetemp="$env:RUNNER_TEMP\pytest-transit"
 
       # engine.log has what uv and the engine printed.
       - name: Keep the engine logs

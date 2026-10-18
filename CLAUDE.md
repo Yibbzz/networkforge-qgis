@@ -388,6 +388,18 @@ networkforge-qgis/
   engine; add a scenario for every new kind of change the engine learns.
 - A one-way change (`oneway=yes` on a feature with an OSM id) runs in the
   direction the feature is drawn, not the OSM way's direction.
+- `tests/test_easy_r5.py` (marker `easy_r5`, in the normal run and CI;
+  skipped on QGIS 4, which Easy-R5 doesn't support) is Esri's public
+  transit tutorial in miniature with GISBoost's Easy-R5 plugin at a
+  pinned commit: NetworkForge's after PBF plus two GTFS feeds, transit
+  service areas at 5:15 pm and 2:00 pm. The PBF in R5 itself is tested
+  in the engine (`tests/r5`, r5py). Things learned: R5 drops connected
+  pieces under about 40 streets (hence an 8 x 8 grid) and reports whole
+  minutes; Easy-R5's Java download fails to unpack on Python 3.10.12
+  (CPython gh-107845; the test works round it); Easy-R5 refuses a
+  transit run where no trip uses transit; R5 won't change buses between
+  two stops at the identical spot; Easy-R5 sizes its isochrone grid from
+  MAX_TRIP_DURATION (default 90 min); no wheelchair mode.
 
 ## Pictures in the docs
 - `scripts/make_examples.py` builds the example networks with the

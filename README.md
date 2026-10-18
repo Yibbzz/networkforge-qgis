@@ -14,9 +14,16 @@ without OpenStreetMap.
 Routing on the result is done with routing.earth's
 [QGIS Network Analyst plugin](https://github.com/routing-earth/network-analyst-qgis-plugin),
 which runs Valhalla on your own computer. Together the two give QGIS
-users a routable network of their own, for free.
+users a routable network of their own, for free. The PBF files also
+work in [R5](https://github.com/conveyal/r5), the router behind public
+transport and accessibility tools (tested in the engine).
 
 ![Before and after networks around the harbour, with the custom line highlighted in the after network](docs/images/before-after.png)
+
+QGIS's own **Service area** tool works on the before and after layers
+too, here showing the streets within a 10-minute walk:
+
+![Streets within a 10-minute walk before and after: with the bridge, the far quay comes within reach](docs/images/walk-reach.png)
 
 ## Start here
 
@@ -92,6 +99,16 @@ once a week against the newest version of their plugin (the third badge
 above). The scenarios are in
 [`tests/test_network_analyst.py`](tests/test_network_analyst.py).
 
+Public transport is tested the same way with GISBoost's
+[Easy-R5 plugin](https://github.com/GISBoost/easy-R5) (Conveyal R5):
+[`tests/test_easy_r5.py`](tests/test_easy_r5.py) follows Esri's
+"Create and use a network dataset with public transit data" tutorial in
+miniature. A network built with this plugin and two agencies' GTFS
+feeds gives transit service areas at 5:15 pm and 2:00 pm, and the peak
+one reaches further. Easy-R5 has no wheelchair travel mode, the one part
+of that tutorial it can't do. It runs on QGIS 3 (Easy-R5 doesn't support
+QGIS 4 yet), on Linux and Windows.
+
 ## Development
 
 Link the plugin into your QGIS profile, enable it in QGIS, and use the
@@ -110,8 +127,8 @@ QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest
 ```
 
 The first run installs the engine and downloads the Network Analyst
-plugin and `pyvalhalla` into `.pytest_cache` (needs the internet and
-port 8002). `-m "not engine and not network_analyst"` runs only the
+plugin and `pyvalhalla`, and Easy-R5 with Java and R5, into
+`.pytest_cache` (needs the internet and port 8002). `-m "not engine and not network_analyst"` runs only the
 fast tests. [`manual-test/`](manual-test/README.md) has a checklist for
 what the automated tests can't see.
 
@@ -124,9 +141,12 @@ first.
 
 ## Limitations
 
-No public transport and no traffic simulation. Turn restrictions,
+NetworkForge doesn't model public transport (R5 adds it from GTFS
+timetables) or traffic. Turn restrictions,
 bollards and signals are in the PBF files for routers; the QGIS layers
-can't show them, so QGIS's own network tools ignore them. An existing
+can't show them, so QGIS's own network tools ignore them. R5 ignores
+bollards and other barriers too, and reads a cycle track only when it
+is drawn as a line of its own. An existing
 street can be changed or removed, not redrawn. Areas the size of a
 county or a country need a lot of memory.
 
