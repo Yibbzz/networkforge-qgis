@@ -260,7 +260,8 @@ def service_area(network, departure, minutes, folder, feedback):
         "OUTPUT_LAYER": str(output),
     }, feedback=feedback)
     polygons = [f.geometry() for f in QgsVectorLayer(str(output), "area", "ogr").getFeatures()]
-    assert polygons, f"Easy-R5 drew no service area for {departure}"
+    said = "\n".join(feedback.warnings[-10:] + feedback.errors[-10:] + feedback.infos[-15:])
+    assert polygons, f"Easy-R5 drew no service area for {departure}. It said:\n{said}"
     return QgsGeometry.unaryUnion(polygons)
 
 
