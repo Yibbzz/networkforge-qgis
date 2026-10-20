@@ -326,9 +326,10 @@ def service_area(network, departure, minutes, folder, feedback):
 
 
 @pytest.mark.xfail(sys.platform == "win32", strict=True, reason=(
-    "Easy-R5 0.3.0 writes no service area polygon here on Windows ('0 isochrone polygons "
-    "written'). It pads its grid by 0.9 km per cutoff minute, so this town's 15-minute "
-    "area is contoured on a 27 km grid that is almost all unreachable."))
+    "Easy-R5 0.3.0 writes no service area polygon on Windows ('0 isochrone polygons "
+    "written'), although R5 reaches about 1,000 grid cells: its contouring step "
+    "(gdal:contour_polygon) gives no band inside the cutoff, with no warning. Fine on "
+    "Linux, and trip times are right on Windows (the test above). Cause not known yet."))
 def test_service_areas_at_peak_and_off_peak(transit_network, feedback):
     network, folder = transit_network
 
@@ -344,6 +345,6 @@ def test_service_areas_at_peak_and_off_peak(transit_network, feedback):
     assert not reaches(off_peak, N - 1.2, N - 1)
     # Both include the streets round downtown, and the peak area is bigger.
     # (Not by much: Easy-R5 smooths travel times over a grid that reaches
-    # far past this small town's streets, see above.)
+    # far past this small town's streets.)
     assert reaches(peak, 1.5, 0.5) and reaches(off_peak, 1.5, 0.5)
     assert peak.area() > off_peak.area()
