@@ -46,20 +46,18 @@ too, here showing the streets within a 10-minute walk:
 
 ## Install
 
+NetworkForge is on the
+[QGIS plugin repository](https://plugins.qgis.org/plugins/networkforge_qgis/)
+as an experimental plugin. Needs QGIS 3.34 or newer.
+
 1. In QGIS, open **Plugins > Manage and Install Plugins > Settings**.
 2. Tick **Show also Experimental Plugins**.
-3. Under **Plugin Repositories** click **Add**, name it `NetworkForge`,
-   paste this URL and click **OK**:
-
-   ```
-   https://github.com/Yibbzz/networkforge-qgis/releases/latest/download/plugins.xml
-   ```
-4. On the **All** tab, search for **NetworkForge** and click
+3. On the **All** tab, search for **NetworkForge** and click
    **Install Plugin**.
 
 Or download the zip from the
 [latest release](https://github.com/Yibbzz/networkforge-qgis/releases/latest)
-and use **Install from ZIP**. Needs QGIS 3.34 or newer.
+and use **Install from ZIP**.
 
 The first time you run a tool, the plugin installs its engine into a
 `networkforge` folder in your QGIS profile (once, needs an internet
