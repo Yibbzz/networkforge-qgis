@@ -31,6 +31,12 @@ too, here showing the streets within a 10-minute walk:
   screenshots: a commute across the Thames in Reading, a new bridge,
   changes to the streets around it, and routes before and after with
   the Network Analyst plugin. The data to follow along is included.
+- **[The public transport tutorial](docs/tutorial-transit.md)**: Esri's
+  transit tutorial done in QGIS with the Easy-R5 plugin: Cincinnati's
+  streets and two bus companies' timetables, 30-minute service areas
+  from downtown at 5:15 pm and 2:00 pm, two closed public stairways
+  reopened to see how much more of the city people on the hill can reach,
+  and a new tram line added to the timetables.
 - **[Examples](docs/examples.md)**: six short ones with pictures: a
   footbridge, a closed street, a network from six lines, a one-way
   street, a banned turn and a bollard.

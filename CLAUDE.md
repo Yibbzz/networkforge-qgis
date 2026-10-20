@@ -442,6 +442,37 @@ networkforge-qgis/
   to `<profile>/valhalla/pyvalhalla`, where their "Install" button puts
   it; stop their server and wait for the process to end before starting
   it on another graph (the start/stop button is one toggle).
+- `docs/tutorial-transit.md` is **the user's own writing** (since
+  2026-10-20; like `tutorial.md`, fix formatting only, never change a
+  word without being asked). It is Esri's public transit tutorial done with Easy-R5: Cincinnati,
+  Metro's and TANK's GTFS feeds, 30-minute service areas from Fountain
+  Square at 5:15 pm and 2:00 pm, and in place of Esri's wheelchair mode
+  two closed city stairways at Brighton (OSM ways 197716033, 197715354,
+  `foot=no`) reopened, compared from Klotter Avenue; then (step 8) an
+  invented tram line up Vine Street to Uptown as an Easy-R5 "Build
+  scenario" (new line, vertices = stops, 18 km/h, every 10 min), compared
+  over a 60-minute departure window (2-3 pm): a new line has a frequency,
+  not a timetable, so R5 draws its departures at random and a 1-minute
+  window gives a different area each run (11.0 vs 11.3 km2); over an hour
+  it varies by about 0.1 km2. `NF_ONLY=16` retakes just the form picture. Esri's tutorial changes neither streets
+  nor timetables: steps 7 and 8 go beyond it.
+  `scripts/make_transit_tutorial_example.py` writes
+  `docs/tutorial-data/cincinnati-transit.gpkg`, downloads the feeds and
+  builds everything into `.pytest_cache/transit` (the street build is
+  240 km2 through Overpass: 8 minutes, 4 GB; kept between runs), and
+  prints the areas the tutorial quotes. Then
+  `scripts/make_transit_screenshots.py` (with
+  `transit_screens_in_qgis.py`) takes `docs/images/transit-qgis-*.webp`
+  in QGIS desktop with Easy-R5. The feeds expire (this pair overlaps
+  5 Oct - 6 Nov 2026): with new feeds pick a weekday both run, change
+  `DATE` in both scripts and the tutorial, and rerun both. Things learned:
+  the stairways assert they are still closed in OSM; a headless QGIS
+  started by `make_examples` can't read a GeoPackage layer's CRS (pass
+  memory layers to Easy-R5); Overpass refuses requests without a
+  User-Agent; wait for a Processing form with its `algorithmFinished`
+  signal, not by reading its log; on this 7 GB machine R5 gets killed
+  (exit -9) when other apps are open, so the scripts pass
+  `JAVA_HEAP_GB` 3.
 - `scripts/make_form_images.py` grabs the tools' forms from QGIS desktop
   running off-screen (`docs/images/*-form.png`). Rerun it whenever a
   tool's parameters or help text change.
