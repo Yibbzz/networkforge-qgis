@@ -245,19 +245,79 @@ MODES = {"transit": 0, "walk": 1, "bike": 2, "car": 3}   # Easy-R5's MODE choice
 
 # ----------------------------------------------------------- the tutorial
 
+_BUILT = {}
+
+
+@pytest.fixture
+def transit_network(provider, real_engine, easy_r5, feedback, tmp_path_factory,
+                    qgis_new_project):
+    """Steps 1 and 2 of the tutorial, done once for both tests: (network.dat, folder)."""
+    if not _BUILT:
+        folder = tmp_path_factory.mktemp("transit")
+        # 1. The street network, made by NetworkForge: the town's grid plus
+        #    a new footpath (any change would do; the after PBF is what counts).
+        grid = folder / "grid.osm"
+        grid_osm(grid)
+        plan = line_layer(([at(4.5, 2), at(4.5, 3)], "footway"))
+        built = processing.run("networkforge:build_network", {
+            "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(grid),
+            "OUTPUT_FOLDER": str(folder / "out"),
+        }, feedback=feedback)
+        # 2. The transit network: the PBF and both agencies' GTFS feeds.
+        _BUILT["network"] = processing.run("easyr5:buildnetwork", {
+            "OSM_PBF": built["AFTER_OSM"], "GTFS_FOLDER": str(gtfs_folder(folder / "gtfs")),
+            "CACHE_FOLDER": str(folder / "r5-networks"),
+        }, feedback=feedback)["NETWORK_DAT"]
+        _BUILT["folder"] = folder
+    return _BUILT["network"], _BUILT["folder"]
+
+
+START = at(1, 0.2)   # just north of downtown, 20 m from the city bus's first stop
+TRIP_SETTINGS = {
+    "MODE": 0,           # transit and walking
+    "DATE": DATE,
+    "TIME_WINDOW": 1,    # leave at the departure time, as in the tutorial
+    "ESTIMATE_FIRST": False,
+}
+
+
+def transit_minutes(network, departure, destinations, folder, feedback):
+    """Easy-R5's transit trip times from START: {name: whole minutes}."""
+    table = folder / f"times-{departure.replace(':', '')}.csv"
+    processing.run("easyr5:runtraveltimematrix", {
+        "NETWORK": network, **TRIP_SETTINGS, "DEPARTURE_TIME": departure,
+        "ORIGINS": point_layer((*START, "start")), "ORIGIN_ID_FIELD": "id",
+        "DESTINATIONS": point_layer(*[(*at(*place), name) for name, place in destinations.items()]),
+        "DEST_ID_FIELD": "id", "INCLUDE_UNREACHABLE": True, "OUTPUT_CSV": str(table),
+    }, feedback=feedback)
+    rows = [line.split(",") for line in table.read_text(encoding="utf-8").splitlines()[1:]]
+    return {row[1]: int(row[-1]) if row[-1] else None for row in rows}
+
+
+def test_transit_trips_at_peak_and_off_peak(transit_network, feedback):
+    network, folder = transit_network
+    places = {"uptown": (1, N - 1.2), "far_end": (N - 1.2, N - 1)}
+
+    peak = transit_minutes(network, "17:15", places, folder, feedback)
+    off_peak = transit_minutes(network, "14:00", places, folder, feedback)
+
+    # Uptown by the city bus at both times: 5 minutes' wait, 2 on the bus.
+    assert peak["uptown"] <= 8 and off_peak["uptown"] <= 8
+    # The far end at 5:15 pm: city bus 17:20 (uptown 17:22), suburban bus
+    # 17:25 (far end 17:27), about 12 minutes - so R5 changes between the
+    # two agencies' buses. At 2:00 pm the suburban bus waits till 2:15:
+    # walking from uptown is quicker, 16 minutes. On foot all the way, 21.
+    assert 11 <= peak["far_end"] <= 13
+    assert 15 <= off_peak["far_end"] <= 17
+
+
 def service_area(network, departure, minutes, folder, feedback):
-    """Easy-R5's transit service area (polygon) from just north of downtown."""
-    start = at(1, 0.2)   # 20 m from the city bus's first stop
+    """Easy-R5's transit service area (polygon) from START."""
     output = folder / f"service-area-{departure.replace(':', '')}.gpkg"
     processing.run("easyr5:generateisochrones", {
-        "NETWORK": network, "ORIGINS": point_layer((*start, "downtown")), "ORIGIN_ID_FIELD": "id",
-        "MODE": 0,                         # transit and walking
-        "DATE": DATE, "DEPARTURE_TIME": departure,
-        "TIME_WINDOW": 1,                  # leave at that time, as in the tutorial
-        "CUTOFFS": str(minutes), "ESTIMATE_FIRST": False,
-        # Easy-R5 sizes its grid of destinations from the longest trip.
-        "MAX_TRIP_DURATION": minutes + 1, "GRID_SPACING": 50,
-        "OUTPUT_LAYER": str(output),
+        "NETWORK": network, **TRIP_SETTINGS, "DEPARTURE_TIME": departure,
+        "ORIGINS": point_layer((*START, "downtown")), "ORIGIN_ID_FIELD": "id",
+        "CUTOFFS": str(minutes), "GRID_SPACING": 50, "OUTPUT_LAYER": str(output),
     }, feedback=feedback)
     polygons = [f.geometry() for f in QgsVectorLayer(str(output), "area", "ogr").getFeatures()]
     said = "\n".join(feedback.warnings[-10:] + feedback.errors[-10:] + feedback.infos[-15:])
@@ -265,40 +325,25 @@ def service_area(network, departure, minutes, folder, feedback):
     return QgsGeometry.unaryUnion(polygons)
 
 
-def test_esri_public_transit_tutorial_peak_and_off_peak_service_areas(
-        provider, real_engine, easy_r5, feedback, tmp_path, qgis_new_project):
-    # 1. The street network, made by NetworkForge: the town's grid plus a
-    #    new footpath (any change would do; the after PBF is what counts).
-    grid = tmp_path / "grid.osm"
-    grid_osm(grid)
-    plan = line_layer(([at(4.5, 2), at(4.5, 3)], "footway"))
-    built = processing.run("networkforge:build_network", {
-        "EXTENT": EXTENT, "CUSTOM": plan, "OSM_FILE": str(grid),
-        "OUTPUT_FOLDER": str(tmp_path / "out"),
-    }, feedback=feedback)
-
-    # 2. The transit network: the PBF and both agencies' GTFS feeds.
-    network = processing.run("easyr5:buildnetwork", {
-        "OSM_PBF": built["AFTER_OSM"], "GTFS_FOLDER": str(gtfs_folder(tmp_path / "gtfs")),
-        "CACHE_FOLDER": str(tmp_path / "r5-networks"),
-    }, feedback=feedback)["NETWORK_DAT"]
+@pytest.mark.xfail(sys.platform == "win32", strict=True, reason=(
+    "Easy-R5 0.3.0 writes no service area polygon here on Windows ('0 isochrone polygons "
+    "written'). It pads its grid by 0.9 km per cutoff minute, so this town's 15-minute "
+    "area is contoured on a 27 km grid that is almost all unreachable."))
+def test_service_areas_at_peak_and_off_peak(transit_network, feedback):
+    network, folder = transit_network
 
     # 3. Service areas at 5:15 pm and at 2:00 pm.
-    peak = service_area(network, "17:15", 15, tmp_path, feedback)
-    off_peak = service_area(network, "14:00", 15, tmp_path, feedback)
+    peak = service_area(network, "17:15", 15, folder, feedback)
+    off_peak = service_area(network, "14:00", 15, folder, feedback)
 
     def reaches(area, col, row):
         return area.contains(QgsGeometry.fromPointXY(QgsPointXY(*at(col, row))))
 
-    # At 5:15 pm: the city bus up column 1 (17:20, uptown 17:22), then the
-    # suburban bus along row 7 (17:25, far end 17:27): about 12 minutes.
-    # On foot the far end is 1,260 m away, 21 minutes.
+    # The far end is 12 minutes away at 5:15 pm and 16 at 2:00 pm (above).
     assert reaches(peak, N - 1.2, N - 1)
-    # At 2:00 pm: the city bus at 2:05 (uptown 2:07), the suburban bus at
-    # 2:15 (far end 2:17): 17 minutes, outside the area.
     assert not reaches(off_peak, N - 1.2, N - 1)
     # Both include the streets round downtown, and the peak area is bigger.
-    # (Not by much: Easy-R5 smooths travel times over a grid, and its
-    # polygons reach well past the streets on every side.)
+    # (Not by much: Easy-R5 smooths travel times over a grid that reaches
+    # far past this small town's streets, see above.)
     assert reaches(peak, 1.5, 0.5) and reaches(off_peak, 1.5, 0.5)
     assert peak.area() > off_peak.area()
