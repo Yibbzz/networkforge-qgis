@@ -26,11 +26,17 @@ from qgis.PyQt.QtNetwork import QNetworkRequest
 
 # The engine's CLI flags, JSON events and exit codes are the contract, so
 # the version is pinned here and nowhere else.
-ENGINE_VERSION = "1.1.0"
+ENGINE_VERSION = "1.2.0"
 ENGINE_REPO = "https://github.com/Yibbzz/networkforge"
 # The tag's zip rather than "git+https://...", so users don't need git.
 ENGINE_REQUIREMENT = (
     f"networkforge @ {ENGINE_REPO}/archive/refs/tags/v{ENGINE_VERSION}.zip"
+)
+# Traffic ("Add traffic") needs Valhalla (pyvalhalla, ~100 MB): installed
+# into the engine's environment the first time that tool runs, not for
+# everyone.
+TRAFFIC_REQUIREMENT = (
+    f"networkforge[traffic] @ {ENGINE_REPO}/archive/refs/tags/v{ENGINE_VERSION}.zip"
 )
 ENGINE_PYTHON = "3.12"
 # What `networkforge info --json` prints for the pinned version, saved so
@@ -305,7 +311,7 @@ def installed_version():
     except (OSError, subprocess.TimeoutExpired) as err:
         _log(f"the engine did not report its version: {err}")
         return None
-    words = result.stdout.split()  # "networkforge 1.1.0"
+    words = result.stdout.split()  # "networkforge 1.2.0"
     if result.returncode != 0 or not words:
         _log(f"the engine did not report its version (exit code "
              f"{result.returncode}):\n{result.stdout}{result.stderr}")
@@ -365,6 +371,40 @@ def ensure_installed(feedback=None):
                 "Replacing it."
             )
     install(feedback)
+
+
+def has_traffic():
+    """Whether the engine's environment has Valhalla (pyvalhalla) for traffic."""
+    try:
+        result = subprocess.run(
+            [_venv_python(), "-c", "import valhalla"],
+            capture_output=True,
+            stdin=subprocess.DEVNULL,
+            env=_clean_env(),
+            creationflags=_NO_WINDOW,
+            timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
+def ensure_traffic(feedback=None):
+    """Add Valhalla to the engine's environment, unless it is there already."""
+    if has_traffic():
+        return
+    if feedback is not None:
+        feedback.pushInfo(
+            "Installing Valhalla for traffic (once only, about 100 MB)...")
+    uv = _ensure_uv(feedback)
+    cmd = [uv, "pip", "install", "--python", _venv_python(), TRAFFIC_REQUIREMENT]
+    if _run_logged(cmd, feedback, _clean_env()) != 0 or not has_traffic():
+        raise EngineError(
+            "Could not install Valhalla, which traffic needs. It is "
+            "downloaded once, so it needs an internet connection: check it "
+            "and try again. If your connection is fine, the reason is at the "
+            f"end of the log file: {log_path()}"
+        )
 
 
 def info():

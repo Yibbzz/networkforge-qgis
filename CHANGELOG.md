@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- New tool **Add traffic (time of day)**: slower streets at busy times
+  for Valhalla. A table of time bands by road class ("motorway, trunk,
+  primary, secondary at 60% on weekdays from 07:00 to 09:30"; two
+  example rows are filled in) and, optionally, a layer of single streets
+  with their own days, times and factors, which override their road
+  class. It writes Valhalla's graph with the speeds as a `.tar` file:
+  in the Network Analyst plugin, Graphs > From Tar, then route with a
+  departure time. Routes without a time, and that plugin's Processing
+  tools, see the normal network. Single streets that match no street
+  are selected. The first run installs Valhalla for the engine (about
+  100 MB).
+- The plugin now uses NetworkForge engine v1.2.0 (was v1.1.0), which
+  adds traffic; the first tool you run replaces the installed engine.
+
 ## 0.5.1 - 2026-10-17
 
 - Passes plugins.qgis.org's checks, which blocked 0.5.0: a `.bandit`

@@ -51,6 +51,7 @@ def fake_engine(tmp_path, monkeypatch):
     monkeypatch.setattr(engine, "base_dir", lambda: folder)
     monkeypatch.setattr(engine, "_engine_cmd", lambda: [sys.executable, str(FAKE_ENGINE)])
     monkeypatch.setattr(engine, "ensure_installed", lambda feedback=None: None)
+    monkeypatch.setattr(engine, "ensure_traffic", lambda feedback=None: None)
     monkeypatch.setenv("NF_FAKE_ARGS", str(fake._args))
     monkeypatch.setenv("NF_FAKE_PLAY", str(fake._play))
     return fake

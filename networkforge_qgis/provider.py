@@ -5,6 +5,7 @@ from pathlib import Path
 from qgis.core import QgsProcessingProvider
 from qgis.PyQt.QtGui import QIcon
 
+from .algorithms.add_traffic import AddTrafficAlgorithm
 from .algorithms.build_network import BuildNetworkAlgorithm
 from .algorithms.check_layer import CheckLayerAlgorithm
 from .algorithms.engine_info import EngineInfoAlgorithm
@@ -30,4 +31,5 @@ class NetworkForgeProvider(QgsProcessingProvider):
         self.addAlgorithm(CheckLayerAlgorithm())
         self.addAlgorithm(BuildNetworkAlgorithm())
         self.addAlgorithm(StandaloneNetworkAlgorithm())
+        self.addAlgorithm(AddTrafficAlgorithm())
         self.addAlgorithm(EngineInfoAlgorithm())

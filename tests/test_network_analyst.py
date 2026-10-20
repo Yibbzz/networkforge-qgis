@@ -216,8 +216,12 @@ def _valhalla_env(programs_dir):
 
 
 @contextmanager
-def valhalla_serving(pbf, folder, programs):
-    """Build a Valhalla graph from an OSM file and serve it on localhost."""
+def valhalla_serving(pbf, folder, programs, tar=None):
+    """
+    Build a Valhalla graph from an OSM file and serve it on localhost; or,
+    given `tar`, serve that packed graph as it is (as the Network Analyst
+    plugin does after "From Tar").
+    """
     python, programs_dir = programs
     env = _valhalla_env(programs_dir)
     with socket.socket() as probe:
@@ -231,21 +235,22 @@ def valhalla_serving(pbf, folder, programs):
         [str(python), "-c",
          "import json, sys\n"
          "from valhalla.config import get_config\n"
-         "config = get_config(tile_extract='', tile_dir=sys.argv[1])\n"
+         "config = get_config(tile_extract=sys.argv[3], tile_dir=sys.argv[1])\n"
          "config['mjolnir']['concurrency'] = 1\n"
          f"config['httpd']['service']['listen'] = 'tcp://127.0.0.1:{PORT}'\n"
          "json.dump(config, open(sys.argv[2], 'w'))\n",
-         str(folder / "tiles"), str(config)],
+         "" if tar else str(folder / "tiles"), str(config), str(tar or "")],
         check=True, env=env, capture_output=True,
     )
-    build = subprocess.run(
-        [str(programs_dir / "valhalla_build_tiles"), "-c", str(config), str(pbf)],
-        env=env, capture_output=True, text=True,
-    )
-    assert build.returncode == 0 and any((folder / "tiles").rglob("*.gph")), (
-        f"Valhalla could not build a graph from {pbf}:\n"
-        f"{build.stdout[-2000:]}\n{build.stderr[-2000:]}"
-    )
+    if tar is None:
+        build = subprocess.run(
+            [str(programs_dir / "valhalla_build_tiles"), "-c", str(config), str(pbf)],
+            env=env, capture_output=True, text=True,
+        )
+        assert build.returncode == 0 and any((folder / "tiles").rglob("*.gph")), (
+            f"Valhalla could not build a graph from {pbf}:\n"
+            f"{build.stdout[-2000:]}\n{build.stderr[-2000:]}"
+        )
 
     with open(folder / "valhalla_service.log", "w") as log:
         server = subprocess.Popen(
@@ -381,10 +386,10 @@ def scenario(provider, real_engine, network_analyst, valhalla_programs, feedback
                 "CUSTOM": layer, "OUTPUT_FOLDER": str(tmp_path / "out"), **parameters,
             }, feedback=feedback)
 
-        def valhalla(self, pbf):
+        def valhalla(self, pbf, tar=None):
             Scenario._graphs += 1
             return valhalla_serving(pbf, tmp_path / f"graph{Scenario._graphs}",
-                                    valhalla_programs)
+                                    valhalla_programs, tar=tar)
 
         def route(self, profile, start, end, **settings):
             return route(profile, start, end, feedback, **settings)
@@ -653,3 +658,42 @@ def test_a_ferry_joins_two_streets_in_a_standalone_network(scenario):
             # About 34 m of street, 170 m of ferry and 51 m of street.
             assert 255 < crossing.metres < 290, profile
             assert crossing.seconds >= 120, profile   # the two minutes on board
+
+
+# ------------------------------------------------------------------ traffic
+
+def timed_trip(start, end, depart_at=None):
+    """
+    A car trip as the Network Analyst plugin's routing panel asks for it,
+    through its own routing client: with the time box ticked, the panel
+    adds {"date_time": {"value": ..., "type": 1}} (1 = depart at).
+    """
+    from valhalla.third_party.routingpy.routingpy import Valhalla
+
+    client = Valhalla(base_url=f"http://127.0.0.1:{PORT}")
+    params = {"date_time": {"value": depart_at, "type": 1}} if depart_at else {}
+    return client.directions([list(start), list(end)], "auto", **params)
+
+
+def test_traffic_from_the_tar_slows_a_timed_route_only(scenario, tmp_path):
+    """
+    "Add traffic" on the after network, loaded as Network Analyst's "From
+    Tar" does: at Monday 08:00 the slowed new road is left for the way
+    round the blocks; at night and without a time it is used as before.
+    """
+    built = scenario.build(line_layer((DIAGONAL, "tertiary")))
+    tar = processing.run("networkforge:add_traffic", {
+        "NETWORK_FILE": built["AFTER_OSM"],
+        "BANDS": ["Morning peak", "Mo-Fr", "07:00-09:30", "tertiary", "0.1"],
+        "OUTPUT": str(tmp_path / "after.tar"),
+    }, feedback=scenario.feedback_)["OUTPUT"]
+
+    with scenario.valhalla(built["AFTER_OSM"], tar=tar):
+        untimed = timed_trip(WEST, FAR_CORNER)
+        peak = timed_trip(WEST, FAR_CORNER, "2026-10-19T08:00")
+        night = timed_trip(WEST, FAR_CORNER, "2026-10-19T03:00")
+
+    # Straight across about 429 m, round the blocks about 606 m.
+    assert 410 < untimed.distance < 450
+    assert 410 < night.distance < 450
+    assert 580 < peak.distance < 630

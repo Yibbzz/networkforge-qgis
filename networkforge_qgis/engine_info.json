@@ -1,6 +1,6 @@
 {
  "event": "info",
- "version": "1.1.0",
+ "version": "1.2.0",
  "presets": {
   "motorway": {
    "tags": {
@@ -185,6 +185,61 @@
   "crossings",
   "vertices"
  ],
+ "traffic": {
+  "days": [
+   "Mo",
+   "Tu",
+   "We",
+   "Th",
+   "Fr",
+   "Sa",
+   "Su"
+  ],
+  "minutes_step": 5,
+  "factor_range": [
+   0.05,
+   2.0
+  ],
+  "roads": [
+   "bridleway",
+   "bus_guideway",
+   "busway",
+   "corridor",
+   "cycleway",
+   "footway",
+   "living_street",
+   "motorway",
+   "path",
+   "pedestrian",
+   "primary",
+   "residential",
+   "road",
+   "secondary",
+   "service",
+   "steps",
+   "tertiary",
+   "track",
+   "trunk",
+   "unclassified"
+  ],
+  "all_roads": "all",
+  "output": ".tar",
+  "street_fields": [
+   "days",
+   "time",
+   "factor",
+   "direction",
+   "name"
+  ],
+  "directions": [
+   "both",
+   "forward"
+  ],
+  "street_id_fields": [
+   "osm_id",
+   "osmid"
+  ]
+ },
  "tag_keys": [
   "access",
   "access:conditional",

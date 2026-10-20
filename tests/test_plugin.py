@@ -4,7 +4,7 @@ from qgis.core import QgsApplication
 
 import networkforge_qgis
 
-TOOLS = {"build_network", "check_layer", "engine_info", "standalone_network"}
+TOOLS = {"add_traffic", "build_network", "check_layer", "engine_info", "standalone_network"}
 
 
 def test_plugin_adds_its_tools_and_takes_them_away_again(qgis_processing, qgis_iface):

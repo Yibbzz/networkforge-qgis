@@ -56,7 +56,7 @@ What follows from that:
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v1.1.0`) in one constant. The
+- **Pin the engine version** (currently `v1.2.0`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -94,7 +94,7 @@ What follows from that:
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.1.0.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.2.0.zip"`
   (with `uv venv --python 3.12 --python-preference only-managed` - uv
   downloads its own Python, so QGIS's Python version doesn't matter.
   Without `only-managed` uv reuses a matching Python it finds; the
@@ -134,7 +134,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v1.1.0; v1.0.0 was the first stable one)
+## Engine contract (v1.2.0; v1.0.0 was the first stable one)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
@@ -244,6 +244,22 @@ but aren't written; `ramp`, `ramp:wheelchair`, `ramp:stroller`,
 `tag_values`); outputs that would overwrite an input or each other, or
 a missing output folder, are refused as input errors.
 
+Traffic (since v1.2.0): `networkforge traffic --pbf F --out F.tar
+[--settings F.json|.toml] [--streets F --id-field N] --json` puts time
+bands (road class) and single streets (a line layer: `days`, `time`,
+`factor`, optional `direction` both/forward, `osm_id`/`osmid`) on a
+network as Valhalla predicted traffic and writes Valhalla's graph as a
+tar (Network Analyst: "From Tar"). Needs the engine's `traffic` extra
+(pyvalhalla): `engine.ensure_traffic` installs it into the engine's
+environment the first time "Add traffic" runs, not for every user.
+`done`: `streets`, `segments`, `by_road`, `bands`, `streets_not_found`,
+`single_streets`, `single_segments`, `unmatched`; unmatched streets are a
+warning with `features`. `info`'s `traffic` has days, factor_range,
+roads, street_fields, directions. Only timed requests use it: Network
+Analyst's routing panel (time box) sends a time, its Processing tools
+don't. Guide: `docs/traffic.md` in the engine. A deliberate exception to
+"the PBF is the product": OSM has no tag for a week of speeds.
+
 Since v0.11.1 attributes that aren't tags keep their type in the
 GeoPackage, and text `True` / `False` is no longer read as `yes` / `no`
 (a boolean field still is).
@@ -286,6 +302,7 @@ networkforge-qgis/
 │   │   ├── common.py           # base class: export layer, run engine, select features
 │   │   ├── build_network.py    # "Build scenario network"
 │   │   ├── standalone_network.py # "Build standalone network" (no OSM)
+│   │   ├── add_traffic.py      # "Add traffic (time of day)" (engine `traffic`)
 │   │   ├── check_layer.py      # "Check custom network layer"
 │   │   └── engine_info.py      # "Engine information" (version, reinstall)
 │   ├── styling.py              # renderers for the result layers (built in code, not .qml)
@@ -315,9 +332,18 @@ networkforge-qgis/
    `info`'s `join_at`), output folder, snap distance. No extent, OSM
    file or network type. Outputs: `network.gpkg` loaded as "Network"
    and `network.osm.pbf`. No OSM credit: it holds no OSM data.
-4. No tool for creating a custom layer: the user decided against it
+4. **Add traffic (time of day)** - runs `traffic`; inputs: a network PBF
+   (any the tools made), a table of time bands (QgsProcessingParameterMatrix:
+   Name, Days, Time, Roads, Factor; two example rows), an optional
+   single-streets line layer (exported with `nf_src_fid`, its warnings
+   select features), output `.tar`. Installs pyvalhalla on first use
+   (`engine.ensure_traffic`). Tested by `test_add_traffic.py` (fake
+   engine) and in `test_network_analyst.py` through the Network Analyst
+   plugin's own routingpy client with a `date_time`, as its routing
+   panel sends it (its Processing tools send no time).
+5. No tool for creating a custom layer: the user decided against it
    (users make a line layer in QGIS themselves). Don't add one back.
-5. Styles: after-edges coloured by `highway`, custom edges bold pink and
+6. Styles: after-edges coloured by `highway`, custom edges bold pink and
    changed edges bold orange on top; the standalone network is coloured
    by `highway` only (every edge is custom). Nodes hidden by default.
 
