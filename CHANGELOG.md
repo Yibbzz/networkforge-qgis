@@ -13,8 +13,9 @@
   tools, see the normal network. Single streets that match no street
   are selected. The first run installs Valhalla for the engine (about
   100 MB).
-- The plugin now uses NetworkForge engine v1.2.0 (was v1.1.0), which
-  adds traffic; the first tool you run replaces the installed engine.
+- The plugin now uses NetworkForge engine v1.2.1 (was v1.1.0), which
+  adds traffic (v1.2.1 makes it work on Windows); the first tool you run
+  replaces the installed engine.
 
 ## 0.5.1 - 2026-10-17
 

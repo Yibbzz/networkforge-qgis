@@ -79,7 +79,7 @@ In the Processing Toolbox, under **NetworkForge**:
   graph as a `.tar` file for the Network Analyst plugin's "From Tar";
   routes with a departure time use it. The bands are your assumptions,
   not measured traffic. See the engine's
-  [traffic guide](https://github.com/Yibbzz/networkforge/blob/v1.2.0/docs/traffic.md).
+  [traffic guide](https://github.com/Yibbzz/networkforge/blob/v1.2.1/docs/traffic.md).
 - **Check custom network layer**: checks your lines and attributes in
   seconds, without downloading anything.
 - **Engine information**: the installed engine's version; it can also
@@ -95,7 +95,7 @@ layer can change or remove existing streets and ban turns, and a second,
 points layer adds bollards, signals and crossings.
 
 What the fields mean, where lines join, and how to do each of these is
-in the engine's **[network rules](https://github.com/Yibbzz/networkforge/blob/v1.2.0/docs/network-rules.md)**.
+in the engine's **[network rules](https://github.com/Yibbzz/networkforge/blob/v1.2.1/docs/network-rules.md)**.
 When a line is wrong, the tool selects it and links to the part of
 those rules that explains why.
 

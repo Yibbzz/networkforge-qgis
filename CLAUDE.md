@@ -56,7 +56,7 @@ What follows from that:
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v1.2.0`) in one constant. The
+- **Pin the engine version** (currently `v1.2.1`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -94,7 +94,7 @@ What follows from that:
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.2.0.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.2.1.zip"`
   (with `uv venv --python 3.12 --python-preference only-managed` - uv
   downloads its own Python, so QGIS's Python version doesn't matter.
   Without `only-managed` uv reuses a matching Python it finds; the
@@ -134,7 +134,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v1.2.0; v1.0.0 was the first stable one)
+## Engine contract (v1.2.1; v1.0.0 was the first stable one)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
