@@ -19,8 +19,12 @@ own data, then analyse it. Here that is two tools: NetworkForge makes
 the network and writes OSM PBF files; routing.earth's **QGIS Network
 Analyst** plugin (Valhalla, run locally through `pyvalhalla`) builds a
 graph from the PBF and does the routing. The third aim is documentation
-that is better than Esri's. `docs/roadmap.md` (local only, ignored by git) has the plan and the
-ordered next steps; keep it up to date.
+that is better than Esri's. `docs/roadmap.md` (local only, ignored by git; a symlink to
+`~/networkforge-notes/plugin-roadmap.md`, backed up in the user's private
+repo `Yibbzz/networkforge-notes`) has the plan and the
+ordered next steps; keep it up to date. NetworkForge Lab, the planned
+experiment harness built on NetworkForge and Valhalla, has its own repo
+(`~/networkforge-lab`, github.com/Yibbzz/networkforge-lab).
 
 So: don't add routing tools or a hosted web app here (the Network
 Analyst plugin covers that), and treat "the PBF works in Valhalla" as
@@ -56,7 +60,7 @@ What follows from that:
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v1.2.1`) in one constant. The
+- **Pin the engine version** (currently `v1.3.0`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -94,7 +98,7 @@ What follows from that:
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.2.1.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.3.0.zip"`
   (with `uv venv --python 3.12 --python-preference only-managed` - uv
   downloads its own Python, so QGIS's Python version doesn't matter.
   Without `only-managed` uv reuses a matching Python it finds; the
@@ -134,7 +138,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v1.2.1; v1.0.0 was the first stable one)
+## Engine contract (v1.3.0; v1.0.0 was the first stable one)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
@@ -254,7 +258,12 @@ tar (Network Analyst: "From Tar"). Needs the engine's `traffic` extra
 environment the first time "Add traffic" runs, not for every user.
 `done`: `streets`, `segments`, `by_road`, `bands`, `streets_not_found`,
 `single_streets`, `single_segments`, `unmatched`; unmatched streets are a
-warning with `features`. `info`'s `traffic` has days, factor_range,
+warning with `features`. Since engine v1.3.0: `speed_kph` wherever `factor` goes (the tool's
+bands column takes "0.6", "25 km/h" or "15 mph"), `--speed-table F.csv
+--speed-table-id-field N` (the tool exports any table to CSV with
+`nf_src_fid`; warnings carry `rows`, `done` has `table_rows` and
+`unmatched_rows`), and `direction` backward; short, much-slower bands are
+lifted and warned about (Valhalla's packed week can't hold them). `info`'s `traffic` has days, factor_range,
 roads, street_fields, directions. Only timed requests use it: Network
 Analyst's routing panel (time box) sends a time, its Processing tools
 don't. Guide: `docs/traffic.md` in the engine. A deliberate exception to

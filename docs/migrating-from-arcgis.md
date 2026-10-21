@@ -69,7 +69,7 @@ Notes:
   over OpenStreetMap's types. What matters most for routing is the
   split between motorways, main roads and local streets. The full list
   is in the
-  [network rules](https://github.com/Yibbzz/networkforge/blob/v1.2.1/docs/network-rules.md#attributes).
+  [network rules](https://github.com/Yibbzz/networkforge/blob/v1.3.0/docs/network-rules.md#attributes).
   Paths for walking only are `footway`; slip roads are `motorway_link`,
   `trunk_link` and so on.
 - **One-way codes differ between datasets.** Some use `FT` and `TF`,

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.6.0 - 2026-10-21
+
+- **Add traffic** takes measured speeds as well as factors: in the bands
+  table write a speed with its unit (`25 km/h`, `15 mph`) instead of a
+  factor; single streets can have `speed_kph` instead of `factor`.
+- **Speed table by OSM way id** (optional): any table, a CSV in the
+  project included, with `osm_id` or `osmid`, `days`, `time`,
+  `speed_kph` or `factor` and `direction`. Rows whose way isn't in the
+  network are listed.
+- `direction = backward` for single streets and the speed table.
+
 - New tool **Add traffic (time of day)**: slower streets at busy times
   for Valhalla. A table of time bands by road class ("motorway, trunk,
   primary, secondary at 60% on weekdays from 07:00 to 09:30"; two
@@ -13,9 +24,8 @@
   tools, see the normal network. Single streets that match no street
   are selected. The first run installs Valhalla for the engine (about
   100 MB).
-- The plugin now uses NetworkForge engine v1.2.1 (was v1.1.0), which
-  adds traffic (v1.2.1 makes it work on Windows); the first tool you run
-  replaces the installed engine.
+- The plugin now uses NetworkForge engine v1.3.0 (was v1.1.0), which
+  adds traffic; the first tool you run replaces the installed engine.
 
 ## 0.5.1 - 2026-10-17
 

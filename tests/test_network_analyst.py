@@ -665,8 +665,10 @@ def test_a_ferry_joins_two_streets_in_a_standalone_network(scenario):
 def timed_trip(start, end, depart_at=None):
     """
     A car trip as the Network Analyst plugin's routing panel asks for it,
-    through its own routing client: with the time box ticked, the panel
-    adds {"date_time": {"value": ..., "type": 1}} (1 = depart at).
+    through its own routing client, with {"date_time": {"value": ...,
+    "type": 1}} (1 = depart at): what its Extra JSON box adds to the
+    request (its Time settings box crashes in 6.0.1 and 7.0.1, their
+    issue #64).
     """
     from valhalla.third_party.routingpy.routingpy import Valhalla
 

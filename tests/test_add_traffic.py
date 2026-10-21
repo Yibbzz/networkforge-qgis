@@ -131,7 +131,8 @@ def test_streets_a_warning_names_are_selected(run, fake_engine, streets, feedbac
 
     assert [f.id() for f in streets.selectedFeatures()] == [2]
     assert any("now selected in \"busy streets\"" in w for w in feedback.warnings)
-    assert "Single streets: 1 (2 road segments)." in "\n".join(feedback.infos)
+    log = "\n".join(feedback.infos)
+    assert "Single streets given: 2" in log and "Single streets used: 1." in log
 
 
 def test_an_engine_error_names_the_streets(run, fake_engine, streets):
@@ -159,6 +160,76 @@ def test_an_engine_error_names_the_streets(run, fake_engine, streets):
     (["x", "Mo", "07:00-08:00", "primary", "fast"],
      [{"name": "x", "days": "Mo", "time": "07:00-08:00", "roads": ["primary"],
        "factor": "fast"}]),
+    (["", "", "07:00-08:00", "primary", "25 km/h"],
+     [{"time": "07:00-08:00", "roads": ["primary"], "speed_kph": 25.0}]),
+    (["", "", "07:00-08:00", "primary", "30kph"],
+     [{"time": "07:00-08:00", "roads": ["primary"], "speed_kph": 30.0}]),
+    (["", "", "07:00-08:00", "primary", "20 mph"],
+     [{"time": "07:00-08:00", "roads": ["primary"], "speed_kph": 32.2}]),
 ])
 def test_bands_from_the_table(cells, expected):
     assert bands_from_table(cells) == expected
+
+
+@pytest.fixture
+def speed_table(qgis_new_project):
+    """A table without geometry, as a CSV added to the project would be."""
+    layer = QgsVectorLayer(
+        "None?field=osm_id:double&field=days:string&field=time:string&field=speed_kph:double"
+        "&field=direction:string&field=notes:string", "speeds", "memory")
+    rows = [(4566095.0, "Mo-Fr", "07:00-09:30", 18.0, "forward", "AM count"),
+            (73999457.0, None, "16:00-18:30", 22.0, None, None)]
+    features = []
+    for values in rows:
+        feature = QgsFeature(layer.fields())
+        feature.setAttributes(list(values))
+        features.append(feature)
+    layer.dataProvider().addFeatures(features)
+    QgsProject.instance().addMapLayer(layer)
+    return layer
+
+
+def test_a_speed_table_goes_to_the_engine_as_csv_with_row_ids(run, fake_engine, speed_table):
+    import csv
+
+    run(BANDS=[], SPEED_TABLE=speed_table)
+    assert fake_engine.value("--speed-table-id-field") == ID_FIELD
+    assert "--settings" not in fake_engine.args
+    with open(fake_engine.value("--speed-table"), encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert rows == [
+        {"osm_id": "4566095", "days": "Mo-Fr", "time": "07:00-09:30", "speed_kph": "18",
+         "direction": "forward", ID_FIELD: "1"},
+        {"osm_id": "73999457", "days": "", "time": "16:00-18:30", "speed_kph": "22",
+         "direction": "", ID_FIELD: "2"},
+    ]                                    # "notes" isn't the engine's: left out
+
+
+def test_a_speed_table_needs_a_way_id_column(run, qgis_new_project):
+    layer = QgsVectorLayer("None?field=time:string&field=factor:double", "t", "memory")
+    feature = QgsFeature(layer.fields())
+    feature.setAttributes(["07:00-09:00", 0.5])
+    layer.dataProvider().addFeatures([feature])
+    QgsProject.instance().addMapLayer(layer)
+    with pytest.raises(QgsProcessingException, match="osm_id or osmid"):
+        run(BANDS=[], SPEED_TABLE=layer)
+
+
+def test_unmatched_table_rows_are_listed(run, fake_engine, speed_table, feedback):
+    fake_engine.play([
+        {"event": "warning", "message": "1 speed table row(s) ...", "rows": [2]},
+        {**DONE, "table_rows": 1, "single_segments": 4, "unmatched_rows": [2]},
+    ])
+    run(SPEED_TABLE=speed_table)
+    assert any("Speed table rows (feature ids) that got no traffic: 2." in w
+               for w in feedback.warnings)
+    assert "Speed table rows used: 1." in "\n".join(feedback.infos)
+
+
+def test_the_help_has_no_unfilled_placeholders(provider):
+    from qgis.core import QgsApplication
+
+    text = QgsApplication.processingRegistry().algorithmById(ALGORITHM).shortHelpString()
+    import re
+
+    assert not re.search(r"\{[a-z_.()']+\}", text)       # e.g. {high} left unfilled

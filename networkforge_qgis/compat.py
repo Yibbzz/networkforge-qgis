@@ -16,12 +16,14 @@ from qgis.core import (
 try:
     SOURCE_VECTOR_LINE = Qgis.ProcessingSourceType.VectorLine
     SOURCE_VECTOR_POINT = Qgis.ProcessingSourceType.VectorPoint
+    SOURCE_VECTOR_ANY = Qgis.ProcessingSourceType.Vector   # tables without geometry too
     NUMBER_DOUBLE = Qgis.ProcessingNumberParameterType.Double
     FLAG_ADVANCED = Qgis.ProcessingParameterFlag.Advanced
     SKIP_GEOMETRY_CHECKS = Qgis.ProcessingFeatureSourceFlag.SkipGeometryValidityChecks
 except AttributeError:  # QGIS 3.34
     SOURCE_VECTOR_LINE = QgsProcessing.SourceType.TypeVectorLine
     SOURCE_VECTOR_POINT = QgsProcessing.SourceType.TypeVectorPoint
+    SOURCE_VECTOR_ANY = QgsProcessing.SourceType.TypeVector
     NUMBER_DOUBLE = QgsProcessingParameterNumber.Type.Double
     FLAG_ADVANCED = QgsProcessingParameterDefinition.Flag.FlagAdvanced
     SKIP_GEOMETRY_CHECKS = QgsProcessingFeatureSource.Flag.FlagSkipGeometryValidityChecks
