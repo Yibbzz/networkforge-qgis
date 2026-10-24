@@ -37,6 +37,10 @@ too, here showing the streets within a 10-minute walk:
   from downtown at 5:15 pm and 2:00 pm, two closed public stairways
   reopened to see how much more of the city people on the hill can reach,
   and a new tram line added to the timetables.
+- **[The traffic tutorial](docs/tutorial-traffic.md)**: rush hour in
+  Bristol: traffic added to an OpenStreetMap extract with "Add traffic",
+  and 15-minute driving areas from a hospital at 3 am and 8 am with the
+  Network Analyst plugin's isochrones.
 - **[Examples](docs/examples.md)**: six short ones with pictures: a
   footbridge, a closed street, a network from six lines, a one-way
   street, a banned turn and a bollard.

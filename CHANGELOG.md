@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Add traffic** says plainly that any OSM PBF works as the network, such
+  as an extract from Geofabrik as it is, not only one the plugin made.
+
 ## 0.6.0 - 2026-10-21
 
 - **Add traffic** takes measured speeds as well as factors: in the bands

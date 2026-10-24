@@ -100,10 +100,11 @@ class AddTrafficAlgorithm(CustomNetworkAlgorithm):
             "assumptions, not measured traffic: say so in your results. "
             "Measured speeds go in through single streets or the speed "
             "table.\n\n"
-            "<b>Network</b>: an OSM PBF file this plugin made "
-            "(after.osm.pbf, before.osm.pbf or network.osm.pbf). Run the "
-            "tool on before and after with the same settings, so both have "
-            "the same traffic.\n\n"
+            "<b>Network</b>: any OSM PBF file: an extract from Geofabrik "
+            "(download.geofabrik.de) as it is, or one this plugin made "
+            "(after.osm.pbf, before.osm.pbf or network.osm.pbf). To compare a "
+            "proposal, run the tool on before and after with the same "
+            "settings, so both have the same traffic.\n\n"
             "<b>Time bands by road class</b>: one row per band. Days like "
             "Mo-Fr or Sa,Su; time like 07:00-09:30 (5-minute steps; "
             "22:00-02:00 runs past midnight); roads are kinds of street "
@@ -149,7 +150,7 @@ class AddTrafficAlgorithm(CustomNetworkAlgorithm):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.NETWORK_FILE,
-                "Network (OSM PBF made by NetworkForge)",
+                "Network (OSM PBF file)",
                 fileFilter="OSM PBF (*.osm.pbf *.pbf)",
             )
         )

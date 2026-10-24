@@ -508,6 +508,25 @@ networkforge-qgis/
   signal, not by reading its log; on this 7 GB machine R5 gets killed
   (exit -9) when other apps are open, so the scripts pass
   `JAVA_HEAP_GB` 3.
+- `docs/tutorial-traffic.md` is **the user's own writing** (since
+  2026-10-24; like `tutorial.md`, fix formatting only, never change a
+  word without being asked). It is deliberately simple: Bristol,
+  Geofabrik's `bristol-latest.osm.pbf` given straight to "Add traffic" (no
+  build), the tool's two example bands, and 15-minute driving isochrones
+  from Southmead Hospital in the Network Analyst panel at Monday 03:00 and
+  08:00 (about 81 and 44 km2). `scripts/make_traffic_tutorial_example.py`
+  downloads the extract into `.pytest_cache/traffic-bristol`, writes
+  `docs/tutorial-data/bristol-traffic.gpkg` (the hospital) and prints the
+  areas; `scripts/make_traffic_screenshots.py` (with
+  `traffic_screens_in_qgis.py`) takes `tutorial-traffic-qgis-01..07`.
+  The panel's isochrone page is `menu_widget` row 2, intervals in seconds
+  (`ui_isochrone_intervals`). **Network Analyst 6.0.1 / 7.0.1 crash with
+  "Time settings" ticked** (their issue #64, fixed in their master): the
+  tutorial, the tool's help and the engine's guide use Options > Extra
+  JSON `{"date_time": {"type": 1, "value": "2026-10-19T08:00"}}`; change
+  them back when a fixed release is out. Its "From Tar" moves the tar into
+  its library and names the graph after the file. An earlier Reading
+  version (bridge queues, a speed table) was dropped as too complicated.
 - `scripts/make_form_images.py` grabs the tools' forms from QGIS desktop
   running off-screen (`docs/images/*-form.png`). Rerun it whenever a
   tool's parameters or help text change.
