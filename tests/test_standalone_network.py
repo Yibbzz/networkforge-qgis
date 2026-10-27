@@ -78,6 +78,14 @@ def test_results_name_the_edges_layer_and_pbf_file(build, tmp_path):
     out = tmp_path / "out"
     assert results["NETWORK"] == f"{out / 'network.gpkg'}|layername=edges"
     assert results["NETWORK_OSM"] == str(out / "network.osm.pbf")
+    # No points, so no nodes layer: it would be empty.
+    assert "NETWORK_NODES" not in results
+
+
+def test_points_get_a_nodes_layer(build, fake_engine, tmp_path):
+    fake_engine.play([{**DONE, "tagged_nodes": 2}])
+    results = build()
+    assert results["NETWORK_NODES"] == f"{tmp_path / 'out' / 'network.gpkg'}|layername=nodes"
 
 
 def test_every_way_of_joining_in_the_form_reaches_the_engine_by_name(build, fake_engine):

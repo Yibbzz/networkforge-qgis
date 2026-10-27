@@ -160,8 +160,9 @@ first.
 NetworkForge doesn't model public transport (R5 adds it from GTFS
 timetables) or congestion: "Add traffic" takes the time-of-day speeds
 you assume, for Valhalla only, and nothing reacts to them. Turn restrictions,
-bollards and signals are in the PBF files for routers; the QGIS layers
-can't show them, so QGIS's own network tools ignore them. R5 ignores
+bollards and signals are in the PBF files for routers. The nodes layers
+show the bollards, signals and crossings, but QGIS's own network tools
+ignore them, and no layer shows turn restrictions. R5 ignores
 bollards and other barriers too, and reads a cycle track only when it
 is drawn as a line of its own. An existing
 street can be changed or removed, not redrawn. Areas the size of a

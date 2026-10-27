@@ -22,6 +22,8 @@ from qgis.core import (
     QgsVectorLayer,
 )
 
+from networkforge_qgis import styling
+
 pytestmark = pytest.mark.engine
 
 GRID = Path(__file__).parent / "data" / "grid.osm"
@@ -367,10 +369,11 @@ def test_build_puts_points_on_the_network_without_any_lines(
     }, feedback=feedback)
 
     assert any(info.startswith("Points put on the network: 2.") for info in feedback.infos)
-    nodes = QgsVectorLayer(results["AFTER"].replace("layername=edges", "layername=nodes"),
-                           "nodes", "ogr")
+    nodes = QgsVectorLayer(results["AFTER_NODES"], "nodes", "ogr")
     assert nodes.isValid()
-    assert "bollard" in {f["barrier"] for f in nodes.getFeatures()}
+    styling.style_nodes(nodes)  # as when QGIS loads it: only what routers act on
+    shown = {(f["barrier"] or None, f["highway"] or None) for f in nodes.getFeatures()}
+    assert shown == {("bollard", None), (None, "traffic_signals")}
     # The bollard cut its block in two.
     assert QgsVectorLayer(results["AFTER"], "after", "ogr").featureCount() == 25
     assert not feedback.warnings

@@ -116,6 +116,8 @@ def test_results_name_the_edges_layers_and_pbf_files(build, tmp_path):
     out = tmp_path / "out"
     assert results["BEFORE"] == f"{out / 'before.gpkg'}|layername=edges"
     assert results["AFTER"] == f"{out / 'after.gpkg'}|layername=edges"
+    assert results["BEFORE_NODES"] == f"{out / 'before.gpkg'}|layername=nodes"
+    assert results["AFTER_NODES"] == f"{out / 'after.gpkg'}|layername=nodes"
     assert results["BEFORE_OSM"] == str(out / "before.osm.pbf")
     assert results["AFTER_OSM"] == str(out / "after.osm.pbf")
 
@@ -454,7 +456,7 @@ def test_points_put_on_the_network_are_reported(build, fake_engine, barriers, fe
     build(POINTS=barriers)
 
     assert ('Points put on the network: 2. They are in after.osm.pbf for routers, '
-            'and in the "nodes" layer of the GeoPackage.') in feedback.infos
+            'and in the nodes layer the tool adds.') in feedback.infos
 
 
 def test_problems_with_points_select_the_points_and_name_them(

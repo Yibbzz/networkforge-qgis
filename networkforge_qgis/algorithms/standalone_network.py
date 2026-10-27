@@ -34,6 +34,7 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
     JOIN_AT = "JOIN_AT"
     OUTPUT_FOLDER = "OUTPUT_FOLDER"
     NETWORK = "NETWORK"
+    NETWORK_NODES = "NETWORK_NODES"
     NETWORK_OSM = "NETWORK_OSM"
 
     def name(self):
@@ -66,7 +67,9 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
             "<b>Results</b>: a Network layer coloured by kind of street, "
             "with travel columns (car, bike, walk, speed_kph, direction) "
             "for QGIS's network tools, and network.osm.pbf in the output "
-            "folder for routers such as Valhalla.\n\n"
+            "folder for routers such as Valhalla. Given a points layer, "
+            "a Network nodes layer shows your barriers, signals and "
+            "crossings.\n\n"
             "If the lines don't form one connected network, a warning says "
             "so and the lines outside the largest piece are selected: most "
             "often they stop short of the street they should meet.\n\n"
@@ -103,6 +106,8 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
         )
 
         self.addOutput(QgsProcessingOutputVectorLayer(self.NETWORK, "Network"))
+        self.addOutput(QgsProcessingOutputVectorLayer(
+            self.NETWORK_NODES, "Network nodes (barriers, signals, crossings)"))
         self.addOutput(QgsProcessingOutputFile(self.NETWORK_OSM, "Network (OSM PBF)"))
 
     def processAlgorithm(self, parameters, context, feedback):
@@ -136,10 +141,16 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
         feedback.pushInfo(f"Done. Files are in {folder}")
 
         # No OpenStreetMap data in this network, so no credit to give.
-        network = self.load_edges(context, outputs["--gpkg"], "Network",
-                                  self.NETWORK, styling.style_before, credit=None)
+        results = {self.NETWORK: self.load_layer(
+            context, outputs["--gpkg"], "edges", "Network", self.NETWORK,
+            styling.style_before, 1, credit=None)}
+        # Without OpenStreetMap, only the user's points tag nodes.
+        if done.get("tagged_nodes"):
+            results[self.NETWORK_NODES] = self.load_layer(
+                context, outputs["--gpkg"], "nodes", "Network nodes", self.NETWORK_NODES,
+                styling.style_nodes, 2, credit=None)
         return {
-            self.NETWORK: network,
+            **results,
             self.NETWORK_OSM: str(outputs["--out"]),
             self.OUTPUT_FOLDER: str(folder),
         }

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- New **nodes layers** beside the networks (After nodes, Before nodes,
+  and Network nodes when a standalone network has points): only the
+  nodes routers act on, namely barriers, kerbs, traffic signals, stop and
+  give way signs, crossings and level crossings, each with a symbol of
+  its own. Your own points show here. Before nodes starts unticked.
+
 - **Add traffic** says plainly that any OSM PBF works as the network, such
   as an extract from Geofabrik as it is, not only one the plugin made.
 

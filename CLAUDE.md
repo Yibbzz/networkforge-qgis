@@ -354,7 +354,13 @@ networkforge-qgis/
    (users make a line layer in QGIS themselves). Don't add one back.
 6. Styles: after-edges coloured by `highway`, custom edges bold pink and
    changed edges bold orange on top; the standalone network is coloured
-   by `highway` only (every edge is custom). Nodes hidden by default.
+   by `highway` only (every edge is custom). The `nodes` layer is loaded
+   too ("After nodes", "Before nodes" unticked, "Network nodes" only when
+   points were given), filtered with `setSubsetString` to what routers act
+   on (`styling._NODE_GROUPS`: barriers, kerbs, signals, stop / give way,
+   crossings, level crossings), built from the columns the file has.
+   Stacked by `layerSortKey`, highest on top: After nodes, After
+   network, Before nodes, Before network.
 
 ## Gotchas already learned (from the engine work)
 - `qgis_process` network algorithms need `--PROJECT_PATH=<an .qgs>` placed

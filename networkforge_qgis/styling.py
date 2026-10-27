@@ -6,6 +6,7 @@ Applied on the main thread once a tool has finished, through QGIS's
 
 from qgis.core import (
     QgsLineSymbol,
+    QgsMarkerSymbol,
     QgsProcessingLayerPostProcessorInterface,
     QgsRuleBasedRenderer,
 )
@@ -77,6 +78,64 @@ def style_after(layer):
     layer.setRenderer(QgsRuleBasedRenderer(root))
 
 
+# The nodes a router acts on. Each entry: label, conditions (column,
+# values; None for any value but "kerb"), marker. A nodes layer shows
+# only these; the rest are plain junctions and line ends. Later entries
+# are drawn on top. Access tags on a node without a barrier are left
+# out: routers ignore them there.
+_NODE_GROUPS = (
+    ("Crossings", (("highway", ("crossing",)), ("crossing", None)),
+     {"name": "circle", "color": "#ffffff", "outline_color": "#555555", "size": "1.6"}),
+    ("Level crossings", (("railway", ("level_crossing", "crossing")),),
+     {"name": "cross2", "color": "#333333", "outline_color": "#333333", "size": "2.4"}),
+    ("Stop and give way", (("highway", ("stop", "give_way")),),
+     {"name": "triangle", "color": "#ffffff", "outline_color": "#c0392b", "size": "2"}),
+    ("Traffic signals", (("highway", ("traffic_signals",)),),
+     {"name": "circle", "color": "#f5a623", "outline_color": "#333333", "size": "2.2"}),
+    ("Kerbs", (("barrier", ("kerb",)),),
+     {"name": "line", "color": "#888888", "outline_color": "#888888", "size": "1.6"}),
+    ("Barriers", (("barrier", None),),
+     {"name": "square", "color": "#d7191c", "outline_color": "#ffffff", "size": "2.4"}),
+)
+
+
+def _node_condition(column, values):
+    if values is None:  # any value; kerbs have a group of their own
+        return f'("{column}" IS NOT NULL AND "{column}" <> \'kerb\')'
+    listed = ", ".join(f"'{value}'" for value in values)
+    return f'"{column}" IN ({listed})'
+
+
+def style_nodes(layer):
+    """Only the nodes routers act on: barriers, signals, crossings, ...
+
+    The layer is filtered to them (the attribute table too). Built from
+    the columns the file has: the engine leaves out a column no node has
+    a value for.
+    """
+    root = QgsRuleBasedRenderer.Rule(None)
+    shown = []
+    for label, conditions, marker in _NODE_GROUPS:
+        conditions = [_node_condition(column, values) for column, values in conditions
+                      if layer.fields().indexOf(column) >= 0]
+        if not conditions:
+            continue
+        expression = " OR ".join(conditions)
+        shown.append(f"({expression})")
+        root.appendChild(QgsRuleBasedRenderer.Rule(
+            QgsMarkerSymbol.createSimple(marker), 0, 0, expression, label))
+    layer.setSubsetString(" OR ".join(shown) if shown else "1 = 0")
+    layer.setRenderer(QgsRuleBasedRenderer(root))
+
+
+def hide(layer, context):
+    """Untick a loaded layer in the Layers panel."""
+    project = context.project() if context is not None else None
+    node = project.layerTreeRoot().findLayer(layer) if project is not None else None
+    if node is not None:
+        node.setItemVisibilityChecked(False)
+
+
 class LayerStyler(QgsProcessingLayerPostProcessorInterface):
     """Styles a loaded layer and, given a credit, puts it in its metadata."""
 
@@ -84,14 +143,15 @@ class LayerStyler(QgsProcessingLayerPostProcessorInterface):
     # styler for each role is kept here until it has been used.
     _alive = {}
 
-    def __init__(self, style, credit=OSM_CREDIT):
+    def __init__(self, style, credit=OSM_CREDIT, hidden=False):
         super().__init__()
         self._style = style
         self._credit = credit
+        self._hidden = hidden
 
     @classmethod
-    def create(cls, role, style, credit=OSM_CREDIT):
-        cls._alive[role] = cls(style, credit)
+    def create(cls, role, style, credit=OSM_CREDIT, hidden=False):
+        cls._alive[role] = cls(style, credit, hidden)
         return cls._alive[role]
 
     def postProcessLayer(self, layer, context, feedback):
@@ -102,4 +162,6 @@ class LayerStyler(QgsProcessingLayerPostProcessorInterface):
             metadata = layer.metadata()
             metadata.setRights([self._credit])
             layer.setMetadata(metadata)
+        if self._hidden:
+            hide(layer, context)
         layer.triggerRepaint()

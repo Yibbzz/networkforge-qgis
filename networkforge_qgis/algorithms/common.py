@@ -414,12 +414,15 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
                 )
 
     @staticmethod
-    def load_edges(context, gpkg, name, output, style, credit=styling.OSM_CREDIT):
-        """Ask QGIS to add a network's edges to the project when the tool ends."""
-        source = f"{gpkg}|layername=edges"
+    def load_layer(context, gpkg, layer, name, output, style, order,
+                   credit=styling.OSM_CREDIT, hidden=False):
+        """Ask QGIS to add a layer of a result GeoPackage to the project when
+        the tool ends. Layers with a higher `order` go above the others."""
+        source = f"{gpkg}|layername={layer}"
         details = QgsProcessingContext.LayerDetails(name, context.project(), output)
         details.forceName = True
-        details.setPostProcessor(styling.LayerStyler.create(output, style, credit))
+        details.layerSortKey = order
+        details.setPostProcessor(styling.LayerStyler.create(output, style, credit, hidden))
         context.addLayerToLoadOnCompletion(source, details)
         return source
 
@@ -487,7 +490,7 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
         if count:
             feedback.pushInfo(
                 f"Points put on the network: {count:,}. They are in {file_name} "
-                "for routers, and in the \"nodes\" layer of the GeoPackage."
+                "for routers, and in the nodes layer the tool adds."
             )
 
     def _select(self, export_ids):

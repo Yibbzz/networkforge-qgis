@@ -1,6 +1,14 @@
 """How the result layers are drawn."""
 
-from qgis.core import QgsRuleBasedRenderer, QgsVectorLayer
+from qgis.core import (
+    QgsFeature,
+    QgsGeometry,
+    QgsPointXY,
+    QgsProcessingContext,
+    QgsProject,
+    QgsRuleBasedRenderer,
+    QgsVectorLayer,
+)
 
 from networkforge_qgis import engine, styling
 
@@ -71,3 +79,56 @@ def test_styler_gives_no_credit_for_a_network_without_openstreetmap(qgis_app):
     styler.postProcessLayer(layer, None, None)
     assert layer.metadata().rights() == []
     assert [rule.label() for rule in rules(layer)][0] == "Main roads"
+
+
+def nodes(*rows, columns=("highway", "barrier", "crossing", "railway")):
+    fields = "".join(f"&field={name}:string" for name in columns)
+    layer = QgsVectorLayer(f"Point?crs=EPSG:4326{fields}", "nodes", "memory")
+    provider = layer.dataProvider()
+    for row in rows:
+        feature = QgsFeature(layer.fields())
+        feature.setAttributes([row.get(name) for name in columns])
+        feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(0, 0)))
+        provider.addFeature(feature)
+    return layer
+
+
+def test_nodes_show_only_what_routers_act_on(qgis_app):
+    layer = nodes({}, {"highway": "turning_circle"}, {"barrier": "bollard"},
+                  {"barrier": "kerb"}, {"highway": "traffic_signals"},
+                  {"crossing": "zebra"}, {"highway": "give_way"},
+                  {"railway": "level_crossing"})
+    styling.style_nodes(layer)
+
+    shown = sorted(str(f["barrier"] or f["highway"] or f["crossing"] or f["railway"])
+                   for f in layer.getFeatures())
+    assert shown == ["bollard", "give_way", "kerb", "level_crossing", "traffic_signals",
+                     "zebra"]
+    labels = [rule.label() for rule in rules(layer)]
+    assert labels == ["Crossings", "Level crossings", "Stop and give way",
+                      "Traffic signals", "Kerbs", "Barriers"]
+    barriers = rules(layer)[-1].filterExpression()
+    assert "'kerb'" in barriers  # kerbs aren't drawn as barriers
+
+
+def test_nodes_use_only_the_columns_the_layer_has(qgis_app):
+    # A network with signals but no barriers or crossings at all.
+    layer = nodes({"highway": "traffic_signals"}, {}, columns=("highway",))
+    styling.style_nodes(layer)
+    assert layer.featureCount() == 1
+    assert "Barriers" not in [rule.label() for rule in rules(layer)]
+
+    layer = nodes({}, columns=("ref",))
+    styling.style_nodes(layer)
+    assert layer.isValid() and layer.featureCount() == 0
+
+
+def test_styler_can_untick_the_layer(qgis_app, qgis_new_project):
+    layer = nodes({"barrier": "gate"})
+    project = QgsProject.instance()
+    project.addMapLayer(layer)
+    context = QgsProcessingContext()
+    context.setProject(project)
+    styling.LayerStyler.create("BEFORE_NODES", styling.style_nodes, hidden=True) \
+        .postProcessLayer(layer, context, None)
+    assert not project.layerTreeRoot().findLayer(layer).isVisible()
