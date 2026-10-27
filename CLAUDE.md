@@ -440,7 +440,12 @@ networkforge-qgis/
   (CPython gh-107845; the test works round it); Easy-R5 refuses a
   transit run where no trip uses transit; R5 won't change buses between
   two stops at the identical spot; Easy-R5 sizes its isochrone grid from
-  MAX_TRIP_DURATION (default 90 min); no wheelchair mode.
+  MAX_TRIP_DURATION (default 90 min); no wheelchair mode. Its service
+  areas are empty with GDAL 3.11+ (QGIS 3.44, so Windows and
+  `qgis/qgis:ltr` since 2026-10-27): it contours at one fixed level
+  (`gdal_contour -p -fl 15`), which newer GDAL turns into no polygon;
+  `-fl 0 15` works on both. The service-area test is a strict xfail on
+  GDAL 3.11+ until Easy-R5 changes it.
 
 ## Pictures in the docs
 - `scripts/make_examples.py` builds the example networks with the

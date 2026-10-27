@@ -36,6 +36,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from osgeo import gdal
 from qgis import processing
 from qgis.core import (
     Qgis,
@@ -325,11 +326,17 @@ def service_area(network, departure, minutes, folder, feedback):
     return QgsGeometry.unaryUnion(polygons)
 
 
-@pytest.mark.xfail(sys.platform == "win32", strict=True, reason=(
-    "Easy-R5 0.3.0 writes no service area polygon on Windows ('0 isochrone polygons "
-    "written'), although R5 reaches about 1,000 grid cells: its contouring step "
-    "(gdal:contour_polygon) gives no band inside the cutoff, with no warning. Fine on "
-    "Linux, and trip times are right on Windows (the test above). Cause not known yet."))
+# Easy-R5 contours at one fixed level (gdal_contour -p -fl 15). GDAL 3.12
+# writes no polygon for that; 3.10 wrote the bands below and above it.
+# "-fl 0 15" works on both. QGIS 3.44 (Windows, and qgis/qgis:ltr since
+# 2026-10-27) has GDAL 3.12; 3.10.3 still worked.
+NEW_GDAL = int(gdal.VersionInfo()) >= 3110000
+
+
+@pytest.mark.xfail(NEW_GDAL, strict=True, reason=(
+    "Easy-R5 0.3.0 writes no service area polygon with GDAL 3.11+ ('0 isochrone "
+    "polygons written'): gdal_contour -p with a single -fl level gives no band. "
+    "Fine with GDAL up to 3.10, and trip times are right everywhere (the test above)."))
 def test_service_areas_at_peak_and_off_peak(transit_network, feedback):
     network, folder = transit_network
 
