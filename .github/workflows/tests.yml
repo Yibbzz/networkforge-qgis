@@ -172,9 +172,22 @@ jobs:
           echo "QGIS's Python: $python"
           echo "qgis_process:  $process"
           [ -n "$python" ] && [ -n "$process" ] || { find "$app/Contents/MacOS" -maxdepth 2 | head -50; exit 1; }
+          # Started outside the app, its Python doesn't know where its
+          # standard library and QGIS's own modules are (QGIS tells it
+          # when the app runs): find them in the app.
+          encodings=$(find "$app/Contents" -path '*/lib/python3*/encodings/__init__.py' | head -1)
+          qgis_pkg=$(find "$app/Contents" -path '*/qgis/core/__init__.py' | head -1)
+          echo "encodings:     $encodings"
+          echo "qgis package:  $qgis_pkg"
+          [ -n "$encodings" ] && [ -n "$qgis_pkg" ] || exit 1
+          home=$(dirname "$(dirname "$(dirname "$(dirname "$encodings")")")")
+          modules=$(dirname "$(dirname "$(dirname "$qgis_pkg")")")
           echo "QGIS_PYTHON=$python" >> "$GITHUB_ENV"
           echo "NF_QGIS_PROCESS=$process" >> "$GITHUB_ENV"
-          "$python" -c "import qgis.core; print('QGIS', qgis.core.Qgis.version())"
+          echo "PYTHONHOME=$home" >> "$GITHUB_ENV"
+          echo "PYTHONPATH=$modules" >> "$GITHUB_ENV"
+          export PYTHONHOME="$home" PYTHONPATH="$modules"
+          "$python" -c "import sys, qgis.core; print('QGIS', qgis.core.Qgis.version(), sys.version)"
 
       - name: Install test tools
         run: '"$QGIS_PYTHON" -m pip install -r requirements-dev.txt'
