@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 - 2026-10-28
 
 - New **nodes layers** beside the networks (After nodes, Before nodes,
   and Network nodes when a standalone network has points): only the
