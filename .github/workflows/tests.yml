@@ -173,27 +173,24 @@ jobs:
           echo "qgis_process:  $process"
           [ -n "$python" ] && [ -n "$process" ] || { find "$app/Contents/MacOS" -maxdepth 2 | head -50; exit 1; }
           # Started outside the app, its Python doesn't know where its
-          # standard library and QGIS's own modules are (QGIS tells it
-          # when the app runs): find them in the app.
-          encodings=$(find "$app/Contents" -path '*/lib/python3*/encodings/__init__.py' | head -1)
-          qgis_pkg=$(find "$app/Contents" -path '*/qgis/core/__init__.py' | head -1)
+          # standard library is (QGIS tells it when the app runs): it is
+          # in Contents/Resources/python3.x, with QGIS's modules in
+          # site-packages there.
+          encodings=$(find "$app/Contents" -path '*/python3*/encodings/__init__.py' -not -path '*/site-packages/*' | head -1)
+          qgis_pkg=$(find "$app/Contents" -path '*/site-packages/qgis/core/__init__.py' | head -1)
           echo "encodings:     $encodings"
           echo "qgis package:  $qgis_pkg"
           if [ -z "$encodings" ] || [ -z "$qgis_pkg" ]; then
-            echo "-- encodings anywhere:"; find "$app" -name encodings -maxdepth 8 | head
-            echo "-- python zips:"; find "$app" -name 'python3*.zip' | head
-            echo "-- Resources:"; ls "$app/Contents/Resources" | head -40
-            echo "-- MacOS:"; ls "$app/Contents/MacOS" | head -40
-            echo "-- Frameworks with python:"; ls "$app/Contents/Frameworks" | grep -i python
+            find "$app" -name encodings -maxdepth 8 | head
             exit 1
           fi
-          home=$(dirname "$(dirname "$(dirname "$(dirname "$encodings")")")")
+          stdlib=$(dirname "$(dirname "$encodings")")
           modules=$(dirname "$(dirname "$(dirname "$qgis_pkg")")")
+          path="$stdlib:$stdlib/lib-dynload:$modules"
           echo "QGIS_PYTHON=$python" >> "$GITHUB_ENV"
           echo "NF_QGIS_PROCESS=$process" >> "$GITHUB_ENV"
-          echo "PYTHONHOME=$home" >> "$GITHUB_ENV"
-          echo "PYTHONPATH=$modules" >> "$GITHUB_ENV"
-          export PYTHONHOME="$home" PYTHONPATH="$modules"
+          echo "PYTHONPATH=$path" >> "$GITHUB_ENV"
+          export PYTHONPATH="$path"
           "$python" -c "import sys, qgis.core; print('QGIS', qgis.core.Qgis.version(), sys.version)"
 
       - name: Install test tools
