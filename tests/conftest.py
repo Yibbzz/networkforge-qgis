@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -9,6 +10,10 @@ from networkforge_qgis import engine
 from networkforge_qgis.provider import NetworkForgeProvider
 
 FAKE_ENGINE = Path(__file__).parent / "fake_engine.py"
+# The Python that runs the stand-in. The plugin starts the engine without
+# any PYTHON* setting, and QGIS's own Python can't start without them on
+# macOS (qgis.org's build), so the macOS job names another one.
+FAKE_PYTHON = os.environ.get("NF_TEST_FAKE_PYTHON") or sys.executable
 
 
 
@@ -49,7 +54,7 @@ def fake_engine(tmp_path, monkeypatch):
     folder.mkdir()
     fake = FakeEngine(folder)
     monkeypatch.setattr(engine, "base_dir", lambda: folder)
-    monkeypatch.setattr(engine, "_engine_cmd", lambda: [sys.executable, str(FAKE_ENGINE)])
+    monkeypatch.setattr(engine, "_engine_cmd", lambda: [FAKE_PYTHON, str(FAKE_ENGINE)])
     monkeypatch.setattr(engine, "ensure_installed", lambda feedback=None: None)
     monkeypatch.setattr(engine, "ensure_traffic", lambda feedback=None: None)
     monkeypatch.setenv("NF_FAKE_ARGS", str(fake._args))

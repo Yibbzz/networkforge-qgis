@@ -201,6 +201,9 @@ jobs:
           QT_QPA_PLATFORM: offscreen
           # A space and an accent, like a user called Zoë Müller.
           NF_TEST_ENGINE_DIR: ${{ runner.temp }}/Zoë Müller/networkforge
+          # QGIS's Python can't run the tests' stand-in engine without
+          # PYTHONPATH, which the plugin clears for the engine.
+          NF_TEST_FAKE_PYTHON: /usr/bin/python3
         run: >
           "$QGIS_PYTHON" -m pytest -v
           --ignore=tests/test_network_analyst.py
