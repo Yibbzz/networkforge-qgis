@@ -179,7 +179,14 @@ jobs:
           qgis_pkg=$(find "$app/Contents" -path '*/qgis/core/__init__.py' | head -1)
           echo "encodings:     $encodings"
           echo "qgis package:  $qgis_pkg"
-          [ -n "$encodings" ] && [ -n "$qgis_pkg" ] || exit 1
+          if [ -z "$encodings" ] || [ -z "$qgis_pkg" ]; then
+            echo "-- encodings anywhere:"; find "$app" -name encodings -maxdepth 8 | head
+            echo "-- python zips:"; find "$app" -name 'python3*.zip' | head
+            echo "-- Resources:"; ls "$app/Contents/Resources" | head -40
+            echo "-- MacOS:"; ls "$app/Contents/MacOS" | head -40
+            echo "-- Frameworks with python:"; ls "$app/Contents/Frameworks" | grep -i python
+            exit 1
+          fi
           home=$(dirname "$(dirname "$(dirname "$(dirname "$encodings")")")")
           modules=$(dirname "$(dirname "$(dirname "$qgis_pkg")")")
           echo "QGIS_PYTHON=$python" >> "$GITHUB_ENV"
