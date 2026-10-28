@@ -397,6 +397,14 @@ networkforge-qgis/
   run with its `bin\python-qgis-ltr.bat`, engine in
   `NF_TEST_ENGINE_DIR` = `...\Zoë Müller\networkforge`. It can't be run
   from Linux: check the job on GitHub after changing it or `engine.py`.
+- A `macos` job (since 2026-10-28) runs the same tests on
+  `macos-latest` (Apple silicon) with qgis.org's LTR installer
+  (Homebrew's `qgis@ltr` cask, `/Applications/QGIS-LTR.app`). Its Python
+  (`Contents/MacOS/python3.12`) can't start outside the app without
+  `PYTHONPATH` = its standard library (`Contents/Resources/python3.11`,
+  whatever the name), `lib-dynload` and `site-packages`; the job sets
+  that. The plugin clears `PYTHON*` for the engine, so the stand-in
+  engine runs with `NF_TEST_FAKE_PYTHON` (`/usr/bin/python3`) there.
 - Engine v1.0.0 couldn't open OSM files in folders with non-ASCII
   letters on Windows (`osmium`); v1.0.1 fixed it (the engine's
   `paths.py`). Two tests in `test_end_to_end.py` guard it.
