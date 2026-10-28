@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- No longer experimental: shown in QGIS's plugin manager without "Show
+  also Experimental Plugins".
+- Plugin description brought up to date (the PBF files and routers
+  first, the nodes layers, Add traffic).
+- Tested on macOS as well as Windows and Linux.
+
 ## 0.7.0 - 2026-10-28
 
 - New **nodes layers** beside the networks (After nodes, Before nodes,

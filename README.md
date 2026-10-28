@@ -51,12 +51,11 @@ too, here showing the streets within a 10-minute walk:
 ## Install
 
 NetworkForge is on the
-[QGIS plugin repository](https://plugins.qgis.org/plugins/networkforge_qgis/)
-as an experimental plugin. Needs QGIS 3.34 or newer.
+[QGIS plugin repository](https://plugins.qgis.org/plugins/networkforge_qgis/).
+Needs QGIS 3.34 or newer, on Windows, macOS or Linux.
 
-1. In QGIS, open **Plugins > Manage and Install Plugins > Settings**.
-2. Tick **Show also Experimental Plugins**.
-3. On the **All** tab, search for **NetworkForge** and click
+1. In QGIS, open **Plugins > Manage and Install Plugins**.
+2. On the **All** tab, search for **NetworkForge** and click
    **Install Plugin**.
 
 Or download the zip from the

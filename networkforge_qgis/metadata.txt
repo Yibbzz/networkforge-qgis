@@ -3,13 +3,13 @@ name=NetworkForge
 qgisMinimumVersion=3.34
 qgisMaximumVersion=4.99
 supportsQt6=True
-description=Add your own roads, cycleways and paths to the OpenStreetMap network and get before/after networks back, or build a network from your own lines alone.
-about=NetworkForge integrates a layer of proposed roads, cycleways and paths into the OpenStreetMap network and returns a "before" and an "after" network as QGIS layers, plus OSM PBF files for routers such as Valhalla. Existing streets can be changed or removed, turns can be banned at junctions, bollards, signals and ferries can be added, and a network can be built from your own lines alone, without OpenStreetMap.
+description=Build routable networks for Valhalla and other routers: add your own roads, cycleways and paths to OpenStreetMap, change or close streets, and get before and after OSM PBF files and QGIS layers back.
+about=NetworkForge joins a layer of proposed roads, cycleways and paths into the OpenStreetMap network and writes a "before" and an "after" network as OSM PBF files for routers such as Valhalla (routing.earth's Network Analyst plugin), R5 (Easy-R5, for public transport) and others, with both networks loaded in QGIS as a preview. Existing streets can be changed or removed, turns can be banned at junctions, and bollards, signals, crossings and ferries can be added; the nodes layers show the barriers, signals and crossings. A network can also be built from your own lines alone, without OpenStreetMap. "Add traffic (time of day)" gives a network slower speeds at busy times for Valhalla.
     This plugin is the QGIS front end. The network logic lives in the separate NetworkForge engine (https://github.com/Yibbzz/networkforge, GPL-3.0), which the plugin runs as a separate program.
     External dependency, installed automatically: the first time a tool runs, the plugin downloads the engine and what it needs to run - the uv installer, a Python 3.12 of its own and the engine's Python packages (about 600 MB of disk space). This needs an internet connection and takes a few minutes, once. Nothing is added to QGIS's own Python.
     Where it goes: the "networkforge" folder inside your QGIS profile folder (Settings > User Profiles > Open Active Profile Folder), with the Python itself in uv's own data folder. Deleting the "networkforge" folder removes the engine; the plugin installs it again when next needed. A log file, engine.log, is kept in the same folder.
     Building a network downloads OpenStreetMap data for the chosen area from the Overpass API, unless you give a local OSM file.
-    Proof of concept. Limitations: no public transport, no traffic simulation; turn restrictions, bollards and signals are in the PBF files for routers only; QGIS's own network tools ignore them.
+    Limitations: no public transport of its own (R5 adds it from GTFS timetables) and no traffic simulation; turn restrictions are in the PBF files only, and QGIS's own network tools ignore turn restrictions and barriers. Existing streets can be changed or removed, not redrawn.
     Map data © OpenStreetMap contributors (ODbL).
 version=0.1.0
 author=Nathan
@@ -22,5 +22,5 @@ category=Analysis
 tags=network,network analysis,openstreetmap,osm,routing,scenario,transport,valhalla,cycling,planning
 icon=icons/networkforge.svg
 hasProcessingProvider=yes
-experimental=True
+experimental=False
 deprecated=False

@@ -302,7 +302,7 @@ field `speed_kph`.
 ```
 networkforge-qgis/
 ├── networkforge_qgis/          # the plugin package QGIS loads
-│   ├── metadata.txt            # name=NetworkForge, qgisMinimumVersion=3.34, experimental=True, GPL
+│   ├── metadata.txt            # name=NetworkForge, qgisMinimumVersion=3.34, experimental=False, GPL
 │   ├── __init__.py             # classFactory(iface)
 │   ├── plugin.py               # registers/unregisters the Processing provider
 │   ├── provider.py
@@ -553,7 +553,7 @@ networkforge-qgis/
 ## Packaging
 - `qgis-plugin-ci` builds the zip from `metadata.txt` and publishes to
   plugins.qgis.org on a version tag (secret `QGIS_PLUGIN_TOKEN`). Start
-  as `experimental=True`.
+  as `experimental=True`; stable (`experimental=False`) since 2026-10-28.
 - plugins.qgis.org scans every upload and **blocks** a version on a
   critical bandit or detect-secrets finding (0.5.0 was blocked for
   bandit B603, "subprocess call"); a blocked version can only be
