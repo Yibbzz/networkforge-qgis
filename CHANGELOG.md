@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 - 2026-10-28
 
 - No longer experimental: shown in QGIS's plugin manager without "Show
   also Experimental Plugins".
