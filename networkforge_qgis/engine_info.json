@@ -1,6 +1,6 @@
 {
  "event": "info",
- "version": "1.3.0",
+ "version": "1.4.0",
  "presets": {
   "motorway": {
    "tags": {
@@ -166,6 +166,19 @@
   "walk_minutes",
   "car_direction",
   "bike_direction"
+ ],
+ "gpkg_layers": [
+  "nodes",
+  "edges",
+  "restrictions"
+ ],
+ "gpkg_restriction_columns": [
+  "relation_id",
+  "from_way",
+  "via_node",
+  "via_ways",
+  "to_way",
+  "custom"
  ],
  "edit_id_fields": [
   "osm_id",

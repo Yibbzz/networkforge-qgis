@@ -78,8 +78,15 @@ def test_results_name_the_edges_layer_and_pbf_file(build, tmp_path):
     out = tmp_path / "out"
     assert results["NETWORK"] == f"{out / 'network.gpkg'}|layername=edges"
     assert results["NETWORK_OSM"] == str(out / "network.osm.pbf")
-    # No points, so no nodes layer: it would be empty.
-    assert "NETWORK_NODES" not in results
+    # No points or turns, so no nodes or restrictions layer: they would be empty.
+    assert "NETWORK_NODES" not in results and "NETWORK_TURNS" not in results
+
+
+def test_turn_restrictions_get_a_layer(build, fake_engine, tmp_path):
+    fake_engine.play([{**DONE, "turn_restrictions": 1}])
+    results = build()
+    assert results["NETWORK_TURNS"] == (
+        f"{tmp_path / 'out' / 'network.gpkg'}|layername=restrictions")
 
 
 def test_points_get_a_nodes_layer(build, fake_engine, tmp_path):
@@ -156,8 +163,8 @@ def test_turn_restrictions_are_reported_with_where_they_are(build, fake_engine, 
 
     build()
 
-    assert ("Turn restrictions added: 1. They are in network.osm.pbf for routers; "
-            "the QGIS layers can't show them.") in feedback.infos
+    assert ("Turn restrictions added: 1. They are in network.osm.pbf for routers, "
+            "and in the turn restrictions layer the tool adds.") in feedback.infos
 
 
 def test_engine_error_links_the_guide_and_selects_the_feature(build, fake_engine, lines):

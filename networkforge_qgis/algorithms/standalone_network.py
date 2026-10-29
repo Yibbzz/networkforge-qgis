@@ -35,6 +35,7 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
     OUTPUT_FOLDER = "OUTPUT_FOLDER"
     NETWORK = "NETWORK"
     NETWORK_NODES = "NETWORK_NODES"
+    NETWORK_TURNS = "NETWORK_TURNS"
     NETWORK_OSM = "NETWORK_OSM"
 
     def name(self):
@@ -69,7 +70,8 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
             "for QGIS's network tools, and network.osm.pbf in the output "
             "folder for routers such as Valhalla. Given a points layer, "
             "a Network nodes layer shows your barriers, signals and "
-            "crossings.\n\n"
+            "crossings; given turn restrictions, a Network turn "
+            "restrictions layer shows them as arrows.\n\n"
             "If the lines don't form one connected network, a warning says "
             "so and the lines outside the largest piece are selected: most "
             "often they stop short of the street they should meet.\n\n"
@@ -108,6 +110,8 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
         self.addOutput(QgsProcessingOutputVectorLayer(self.NETWORK, "Network"))
         self.addOutput(QgsProcessingOutputVectorLayer(
             self.NETWORK_NODES, "Network nodes (barriers, signals, crossings)"))
+        self.addOutput(QgsProcessingOutputVectorLayer(
+            self.NETWORK_TURNS, "Network turn restrictions"))
         self.addOutput(QgsProcessingOutputFile(self.NETWORK_OSM, "Network (OSM PBF)"))
 
     def processAlgorithm(self, parameters, context, feedback):
@@ -144,11 +148,16 @@ class StandaloneNetworkAlgorithm(CustomNetworkAlgorithm):
         results = {self.NETWORK: self.load_layer(
             context, outputs["--gpkg"], "edges", "Network", self.NETWORK,
             styling.style_before, 1, credit=None)}
-        # Without OpenStreetMap, only the user's points tag nodes.
+        # Without OpenStreetMap, only the user's points tag nodes and only
+        # their own turn restrictions exist: no empty layers otherwise.
         if done.get("tagged_nodes"):
             results[self.NETWORK_NODES] = self.load_layer(
                 context, outputs["--gpkg"], "nodes", "Network nodes", self.NETWORK_NODES,
                 styling.style_nodes, 2, credit=None)
+        if done.get("turn_restrictions"):
+            results[self.NETWORK_TURNS] = self.load_layer(
+                context, outputs["--gpkg"], "restrictions", "Network turn restrictions",
+                self.NETWORK_TURNS, styling.style_restrictions, 3, credit=None)
         return {
             **results,
             self.NETWORK_OSM: str(outputs["--out"]),

@@ -132,3 +132,37 @@ def test_styler_can_untick_the_layer(qgis_app, qgis_new_project):
     styling.LayerStyler.create("BEFORE_NODES", styling.style_nodes, hidden=True) \
         .postProcessLayer(layer, context, None)
     assert not project.layerTreeRoot().findLayer(layer).isVisible()
+
+
+def restrictions():
+    return QgsVectorLayer("LineString?crs=EPSG:4326&field=custom:string"
+                          "&field=restriction:string", "restrictions", "memory")
+
+
+def test_restrictions_are_arrows_with_the_users_on_top(qgis_app):
+    layer = restrictions()
+    styling.style_restrictions(layer)
+
+    mine, osm = rules(layer)
+    assert mine.filterExpression() == "\"custom\" = 'yes'" and osm.isElse()
+    assert mine.label() == "Your turn restrictions"
+    for rule in (mine, osm):
+        line, arrow = rule.symbol().symbolLayers()
+        assert arrow.subSymbol() is not None  # the arrowhead
+        assert line.renderingPass() == arrow.renderingPass() == 2
+    assert mine.symbol().width() > osm.symbol().width()
+    assert mine.symbol().color() == styling.QgsLineSymbol.createSimple(
+        styling._CUSTOM_LINE).color()
+
+
+def test_nodes_your_points_tagged_are_shown_and_ringed(qgis_app):
+    layer = nodes({}, {"custom": "yes"}, {"modified": "yes"}, {"barrier": "gate"},
+                  columns=("highway", "barrier", "custom", "modified"))
+    styling.style_nodes(layer)
+
+    assert layer.featureCount() == 3  # the plain junction is left out
+    new, changed, *groups = rules(layer)
+    assert new.filterExpression() == "\"custom\" = 'yes'"
+    assert changed.filterExpression() == "\"modified\" = 'yes'"
+    assert new.symbol().symbolLayer(0).renderingPass() == 1
+    assert [rule.label() for rule in groups][-1] == "Barriers"

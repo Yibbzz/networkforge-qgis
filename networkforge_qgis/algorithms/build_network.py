@@ -36,6 +36,8 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
     AFTER = "AFTER"
     BEFORE_NODES = "BEFORE_NODES"
     AFTER_NODES = "AFTER_NODES"
+    BEFORE_TURNS = "BEFORE_TURNS"
+    AFTER_TURNS = "AFTER_TURNS"
     BEFORE_OSM = "BEFORE_OSM"
     AFTER_OSM = "AFTER_OSM"
 
@@ -80,12 +82,13 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             "also gets before.osm.pbf and after.osm.pbf for routers such as "
             "Valhalla. Changed streets are drawn in orange; removed streets "
             "are only in the before network. The After nodes layer shows "
-            "the barriers, traffic signals and crossings routers obey, yours "
-            "included; Before nodes (hidden at first) shows OpenStreetMap's "
-            "own.\n\n"
-            "Not included: public transport and traffic simulation. Turn "
-            "restrictions, those in OpenStreetMap and those you draw, are in "
-            "the PBF files only.\n\n"
+            "the barriers, traffic signals and crossings routers obey, with "
+            "the ones your points made ringed; After turn restrictions shows "
+            "every banned turn as an arrow, yours in pink. The Before layers "
+            "of nodes and turns start hidden.\n\n"
+            "Not included: public transport and traffic simulation. QGIS's "
+            "own network tools ignore turn restrictions and barriers; "
+            "routers obey them.\n\n"
             "Map data © OpenStreetMap contributors (ODbL)."
         )
 
@@ -122,6 +125,10 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             self.BEFORE_NODES, "Before nodes (barriers, signals, crossings)"))
         self.addOutput(QgsProcessingOutputVectorLayer(
             self.AFTER_NODES, "After nodes (barriers, signals, crossings)"))
+        self.addOutput(QgsProcessingOutputVectorLayer(
+            self.BEFORE_TURNS, "Before turn restrictions"))
+        self.addOutput(QgsProcessingOutputVectorLayer(
+            self.AFTER_TURNS, "After turn restrictions"))
         self.addOutput(QgsProcessingOutputFile(self.BEFORE_OSM, "Before network (OSM PBF)"))
         self.addOutput(QgsProcessingOutputFile(self.AFTER_OSM, "After network (OSM PBF)"))
 
@@ -174,9 +181,10 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
         feedback.pushInfo(f"Done. Files are in {folder}")
         feedback.pushInfo(f"Map data {styling.OSM_CREDIT}")
 
-        # Top to bottom: After nodes, After network, Before nodes, Before
-        # network. Before nodes starts hidden: drawn over the after streets
-        # it would show e.g. a bollard the user took out.
+        # Top to bottom: After turn restrictions, After nodes, After
+        # network, then the same for Before. Before's restrictions and
+        # nodes start hidden: drawn over the after streets they would show
+        # e.g. a bollard the user took out.
         before, after = outputs["--baseline-gpkg"], outputs["--gpkg"]
         results = {
             self.BEFORE: self.load_layer(context, before, "edges", "Before network",
@@ -184,10 +192,16 @@ class BuildNetworkAlgorithm(CustomNetworkAlgorithm):
             self.BEFORE_NODES: self.load_layer(context, before, "nodes", "Before nodes",
                                                self.BEFORE_NODES, styling.style_nodes, 2,
                                                hidden=True),
+            self.BEFORE_TURNS: self.load_layer(
+                context, before, "restrictions", "Before turn restrictions",
+                self.BEFORE_TURNS, styling.style_restrictions, 3, hidden=True),
             self.AFTER: self.load_layer(context, after, "edges", "After network",
-                                        self.AFTER, styling.style_after, 3),
+                                        self.AFTER, styling.style_after, 4),
             self.AFTER_NODES: self.load_layer(context, after, "nodes", "After nodes",
-                                              self.AFTER_NODES, styling.style_nodes, 4),
+                                              self.AFTER_NODES, styling.style_nodes, 5),
+            self.AFTER_TURNS: self.load_layer(
+                context, after, "restrictions", "After turn restrictions",
+                self.AFTER_TURNS, styling.style_restrictions, 6),
         }
         return {
             **results,

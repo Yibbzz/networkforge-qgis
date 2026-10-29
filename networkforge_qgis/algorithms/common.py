@@ -63,8 +63,8 @@ def turn_restrictions_help():
         "on, through the junction, onto the street you leave on, and give "
         f"it a field called {field} with a value such as {values[0]} or "
         f"{values[-3]}. It needs no kind of street. Routers such as "
-        "Valhalla obey it; it is written to the PBF file only, because "
-        "the QGIS layers can't show it. "
+        "Valhalla obey it in the PBF file; the turn restrictions layer "
+        "shows it as an arrow, but QGIS's own network tools ignore it. "
         f"<a href=\"{engine.guide_url('turn-restrictions')}\">Guide</a>."
     )
 
@@ -484,7 +484,7 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
         if count:
             feedback.pushInfo(
                 f"Turn restrictions added: {count:,}. They are in {file_name} "
-                "for routers; the QGIS layers can't show them."
+                "for routers, and in the turn restrictions layer the tool adds."
             )
         count = done.get("tagged_nodes", 0)
         if count:

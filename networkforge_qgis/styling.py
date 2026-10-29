@@ -6,6 +6,7 @@ Applied on the main thread once a tool has finished, through QGIS's
 
 from qgis.core import (
     QgsLineSymbol,
+    QgsMarkerLineSymbolLayer,
     QgsMarkerSymbol,
     QgsProcessingLayerPostProcessorInterface,
     QgsRuleBasedRenderer,
@@ -106,15 +107,34 @@ def _node_condition(column, values):
     return f'"{column}" IN ({listed})'
 
 
+# The nodes the user's points tagged: a ring on top, in the colours of
+# custom and changed streets.
+_NODE_RINGS = (
+    ("Your points (new nodes)", "custom", _CUSTOM_LINE["color"]),
+    ("Your points (changed nodes)", "modified", _CHANGED_LINE["color"]),
+)
+
+
 def style_nodes(layer):
     """Only the nodes routers act on: barriers, signals, crossings, ...
 
-    The layer is filtered to them (the attribute table too). Built from
-    the columns the file has: the engine leaves out a column no node has
-    a value for.
+    The layer is filtered to them (the attribute table too), and to the
+    nodes the user's points tagged, ringed on top. Built from the
+    columns the file has: the engine leaves out a column no node has a
+    value for.
     """
     root = QgsRuleBasedRenderer.Rule(None)
     shown = []
+    for label, column, colour in _NODE_RINGS:
+        if layer.fields().indexOf(column) < 0:
+            continue
+        expression = f'"{column}" = \'yes\''
+        shown.append(f"({expression})")
+        ring = QgsMarkerSymbol.createSimple({
+            "name": "circle", "color": "0,0,0,0", "outline_color": colour,
+            "outline_width": "0.6", "size": "4"})
+        ring.symbolLayer(0).setRenderingPass(1)
+        root.appendChild(QgsRuleBasedRenderer.Rule(ring, 0, 0, expression, label))
     for label, conditions, marker in _NODE_GROUPS:
         conditions = [_node_condition(column, values) for column, values in conditions
                       if layer.fields().indexOf(column) >= 0]
@@ -125,6 +145,32 @@ def style_nodes(layer):
         root.appendChild(QgsRuleBasedRenderer.Rule(
             QgsMarkerSymbol.createSimple(marker), 0, 0, expression, label))
     layer.setSubsetString(" OR ".join(shown) if shown else "1 = 0")
+    layer.setRenderer(QgsRuleBasedRenderer(root))
+
+
+def _restriction_line(colour, width):
+    """A line ending in an arrowhead: the way the banned turn goes."""
+    symbol = QgsLineSymbol.createSimple({"color": colour, "width": width,
+                                         "capstyle": "round", "joinstyle": "round"})
+    arrow = QgsMarkerLineSymbolLayer.create({"placement": "lastvertex", "rotate": "1"})
+    arrow.setSubSymbol(QgsMarkerSymbol.createSimple({
+        "name": "filled_arrowhead", "color": colour, "outline_color": colour,
+        "size": str(float(width) * 4)}))
+    symbol.appendSymbolLayer(arrow)
+    for symbol_layer in symbol.symbolLayers():
+        symbol_layer.setRenderingPass(2)  # above streets and nodes
+    return symbol
+
+
+def style_restrictions(layer):
+    """Turn restrictions as arrows through their junction; the user's bold."""
+    root = QgsRuleBasedRenderer.Rule(None)
+    if layer.fields().indexOf("custom") >= 0:
+        root.appendChild(QgsRuleBasedRenderer.Rule(
+            _restriction_line(_CUSTOM_LINE["color"], "1"), 0, 0, "\"custom\" = 'yes'",
+            "Your turn restrictions"))
+    root.appendChild(QgsRuleBasedRenderer.Rule(
+        _restriction_line("#8b1a1a", "0.6"), 0, 0, "ELSE", "Turn restrictions"))
     layer.setRenderer(QgsRuleBasedRenderer(root))
 
 

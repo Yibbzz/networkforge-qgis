@@ -60,7 +60,7 @@ What follows from that:
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v1.3.0`) in one constant. The
+- **Pin the engine version** (currently `v1.4.0`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -98,7 +98,7 @@ What follows from that:
   folder, e.g.
   `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
   and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.3.0.zip"`
+  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.4.0.zip"`
   (with `uv venv --python 3.12 --python-preference only-managed` - uv
   downloads its own Python, so QGIS's Python version doesn't matter.
   Without `only-managed` uv reuses a matching Python it finds; the
@@ -138,7 +138,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v1.3.0; v1.0.0 was the first stable one)
+## Engine contract (v1.4.0; v1.0.0 was the first stable one)
 
 Full reference: the engine README ("Command line", "For programs driving
 the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
@@ -269,6 +269,16 @@ Analyst's routing panel (time box) sends a time, its Processing tools
 don't. Guide: `docs/traffic.md` in the engine. A deliberate exception to
 "the PBF is the product": OSM has no tag for a week of speeds.
 
+Since v1.4.0 (all additions): a `restrictions` layer in every
+GeoPackage (one line per turn restriction in the PBF written with it,
+OSM's and the user's: `relation_id`, `from_way`, `via_node`,
+`via_ways`, `to_way`, `custom`, the relation's tags; `info` has
+`gpkg_layers`, `gpkg_restriction_columns`); `modified` / `custom` = yes
+on the nodes points tagged; node columns `bus`, `psv`, `hgv`,
+`wheelchair`, `toll`, `maxheight`, `maxwidth`, `maxweight`, `entrance`;
+features (and traffic's single streets) whose coordinates can't be
+longitude / latitude in their CRS are an input error naming them.
+
 Since v0.11.1 attributes that aren't tags keep their type in the
 GeoPackage, and text `True` / `False` is no longer read as `yes` / `no`
 (a boolean field still is).
@@ -359,8 +369,15 @@ networkforge-qgis/
    points were given), filtered with `setSubsetString` to what routers act
    on (`styling._NODE_GROUPS`: barriers, kerbs, signals, stop / give way,
    crossings, level crossings), built from the columns the file has.
-   Stacked by `layerSortKey`, highest on top: After nodes, After
-   network, Before nodes, Before network.
+   Stacked by `layerSortKey`, highest on top: After turn restrictions,
+   After nodes, After network, then the same for Before (its turn
+   restrictions and nodes unticked). Nodes your points tagged
+   (`custom` / `modified` = yes, engine v1.4.0) are ringed and always
+   shown. The `restrictions` layer (engine v1.4.0, always in the file,
+   empty too) is drawn by `style_restrictions`: arrows, the user's
+   (`custom` = yes) bold pink. A standalone network loads its nodes /
+   restrictions layers only when the done event counts `tagged_nodes` /
+   `turn_restrictions`.
 
 ## Gotchas already learned (from the engine work)
 - `qgis_process` network algorithms need `--PROJECT_PATH=<an .qgs>` placed

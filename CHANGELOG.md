@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- Uses engine v1.4.0.
+- New **turn restrictions layers** (After, Before, and Network for a
+  standalone network with turns): every banned or required turn,
+  OpenStreetMap's and yours, as a short arrow through its junction,
+  yours in pink. Before turn restrictions starts unticked.
+- The nodes layers ring the nodes **your points** tagged: pink for a
+  new node, orange for an existing one changed.
+- Nodes layers also have `toll`, `maxheight`, `maxwidth`, `maxweight`,
+  `entrance`, and lorry and bus access on barriers.
+- A layer whose coordinates can't be longitude / latitude in its CRS
+  (metres in a layer that says degrees) is refused, naming the features,
+  in every tool. "Add traffic" used to match none of such streets.
+
 ## 0.8.0 - 2026-10-28
 
 - No longer experimental: shown in QGIS's plugin manager without "Show

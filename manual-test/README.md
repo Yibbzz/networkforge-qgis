@@ -76,9 +76,12 @@ beside the box > **Calculate from Layer** > `monaco_area`, Travel type =
 - [ ] **3.1 A new line.** Custom network layer = `monaco_footbridge`.
       - The progress bar moves and names each step.
       - Log: `After network: 4,574 street segments, of which 1 new and 0 changed.`
-      - Four layers appear, top to bottom: **After nodes**, **After
-        network**, **Before nodes** (unticked) and **Before network**;
-        the networks coloured by kind of street.
+      - Six layers appear, top to bottom: **After turn restrictions**,
+        **After nodes**, **After network**, **Before turn restrictions**
+        and **Before nodes** (both unticked), **Before network**; the
+        networks coloured by kind of street.
+      - After turn restrictions shows Monaco's 13 banned turns as dark
+        red arrows through their junctions.
       - After nodes shows only barriers (red squares), kerbs, traffic
         signals (amber), stop / give way signs and crossings, each group
         in its legend. Its attribute table lists only those nodes.
@@ -126,7 +129,10 @@ feature's own attributes".
         `Points put on the network: 1. ...`
       - `Network: 11 street segments.` (the bollard cut Mill Lane)
       - A **Network nodes** layer appears with the bollard as a red
-        square on Mill Lane. (4.1, without points, has no nodes layer.)
+        square on Mill Lane, ringed in pink (your point, a new node).
+        (4.1, without points, has no nodes layer.)
+      - A **Network turn restrictions** layer shows the banned turn as a
+        pink arrow through its junction.
 - [ ] **4.3 A line that doesn't reach.** Network layer =
       `newtown_streets_with_gap`.
       - A warning says the network is in 2 separate pieces, and
@@ -168,7 +174,7 @@ Keep a Before network layer from part 3 visible to snap to.
 - [ ] **5.5 A bollard.** In `my_points`, put a point on a street with
       `barrier` = `bollard`. Build with Points layer = `my_points`:
       `Points put on the network: 1` more than before, and the bollard
-      is a red square in **After nodes**.
+      is a red square in **After nodes**, ringed in pink.
 - [ ] **5.6 A change to an existing street.** With the Identify tool,
       find the `osmid` of a street in the Before network. Select that
       street, copy it (Ctrl+C), paste it into `my_lines` (Ctrl+V while

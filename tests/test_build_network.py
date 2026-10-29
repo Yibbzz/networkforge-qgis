@@ -118,6 +118,8 @@ def test_results_name_the_edges_layers_and_pbf_files(build, tmp_path):
     assert results["AFTER"] == f"{out / 'after.gpkg'}|layername=edges"
     assert results["BEFORE_NODES"] == f"{out / 'before.gpkg'}|layername=nodes"
     assert results["AFTER_NODES"] == f"{out / 'after.gpkg'}|layername=nodes"
+    assert results["BEFORE_TURNS"] == f"{out / 'before.gpkg'}|layername=restrictions"
+    assert results["AFTER_TURNS"] == f"{out / 'after.gpkg'}|layername=restrictions"
     assert results["BEFORE_OSM"] == str(out / "before.osm.pbf")
     assert results["AFTER_OSM"] == str(out / "after.osm.pbf")
 
@@ -222,8 +224,8 @@ def test_turn_restrictions_are_reported_with_where_they_are(build, fake_engine, 
 
     fake_engine.play([dict(DONE, turn_restrictions=2)])
     build()
-    assert ("Turn restrictions added: 2. They are in after.osm.pbf for routers; "
-            "the QGIS layers can't show them.") in feedback.infos
+    assert ("Turn restrictions added: 2. They are in after.osm.pbf for routers, "
+            "and in the turn restrictions layer the tool adds.") in feedback.infos
 
 
 def test_fields_that_change_existing_streets_are_exported(build, fake_engine, lines):

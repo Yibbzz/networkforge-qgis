@@ -14,6 +14,8 @@ from pathlib import Path
 import pytest
 from qgis import processing
 from qgis.core import (
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
     QgsFeature,
     QgsGeometry,
     QgsPointXY,
@@ -294,12 +296,23 @@ def test_build_adds_a_turn_restriction_drawn_through_a_junction(
         "OUTPUT_FOLDER": str(tmp_path / "out"),
     }, feedback=feedback)
 
-    assert ("Turn restrictions added: 1. They are in after.osm.pbf for routers; "
-            "the QGIS layers can't show them.") in feedback.infos
+    assert ("Turn restrictions added: 1. They are in after.osm.pbf for routers, "
+            "and in the turn restrictions layer the tool adds.") in feedback.infos
     assert not feedback.warnings
     # The restriction is in the router's file, not a line of the network.
     after = QgsVectorLayer(results["AFTER"], "after", "ogr")
     assert after.featureCount() == 24
+    # It is a line of the turn restrictions layer: drawn through the junction.
+    turns = QgsVectorLayer(results["AFTER_TURNS"], "turns", "ogr")
+    assert turns.isValid()
+    (turn,) = [f for f in turns.getFeatures() if f["custom"] == "yes"]
+    assert turn["restriction"] == "no_left_turn"
+    junction = QgsGeometry.fromPointXY(QgsPointXY(*LEFT_TURN[1]))
+    junction.transform(QgsCoordinateTransform(
+        QgsCoordinateReferenceSystem("EPSG:4326"), turns.crs(), QgsProject.instance()))
+    assert turn.geometry().distance(junction) < 0.1
+    assert QgsVectorLayer(results["BEFORE_TURNS"], "before", "ogr").featureCount() == (
+        turns.featureCount() - 1)
     assert Path(results["AFTER_OSM"]).stat().st_size > Path(results["BEFORE_OSM"]).stat().st_size
 
 
@@ -372,8 +385,10 @@ def test_build_puts_points_on_the_network_without_any_lines(
     nodes = QgsVectorLayer(results["AFTER_NODES"], "nodes", "ogr")
     assert nodes.isValid()
     styling.style_nodes(nodes)  # as when QGIS loads it: only what routers act on
-    shown = {(f["barrier"] or None, f["highway"] or None) for f in nodes.getFeatures()}
-    assert shown == {("bollard", None), (None, "traffic_signals")}
+    shown = {(f["barrier"] or None, f["highway"] or None, f["custom"] or None,
+              f["modified"] or None) for f in nodes.getFeatures()}
+    # The bollard's node is new; the signals are on an existing junction.
+    assert shown == {("bollard", None, "yes", None), (None, "traffic_signals", None, "yes")}
     # The bollard cut its block in two.
     assert QgsVectorLayer(results["AFTER"], "after", "ogr").featureCount() == 25
     assert not feedback.warnings

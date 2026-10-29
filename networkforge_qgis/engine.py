@@ -26,7 +26,7 @@ from qgis.PyQt.QtNetwork import QNetworkRequest
 
 # The engine's CLI flags, JSON events and exit codes are the contract, so
 # the version is pinned here and nowhere else.
-ENGINE_VERSION = "1.3.0"
+ENGINE_VERSION = "1.4.0"
 ENGINE_REPO = "https://github.com/Yibbzz/networkforge"
 # The tag's zip rather than "git+https://...", so users don't need git.
 ENGINE_REQUIREMENT = (
