@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.9.0 - 2026-10-30
 
 - Uses engine v1.4.0.
 - New **turn restrictions layers** (After, Before, and Network for a
