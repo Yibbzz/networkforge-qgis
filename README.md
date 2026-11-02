@@ -15,7 +15,7 @@ Routing on the result is done with routing.earth's
 [QGIS Network Analyst plugin](https://github.com/routing-earth/network-analyst-qgis-plugin),
 which runs Valhalla on your own computer. Together the two give QGIS
 users a routable network of their own, for free. The PBF files also
-work in [R5](https://github.com/conveyal/r5), the router behind public
+work in [Easy-R5](https://github.com/GISBoost/easy-R5), the router behind public
 transport and accessibility tools (tested in the engine).
 
 ![Before and after networks around the harbour, with the custom line highlighted in the after network](docs/images/before-after.png)
