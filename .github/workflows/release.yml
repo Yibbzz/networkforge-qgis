@@ -15,6 +15,10 @@ on:
   push:
     tags: ["v*"]
 
+# Read-only unless a job asks for more.
+permissions:
+  contents: read
+
 jobs:
   # The checks that would get the version blocked on plugins.qgis.org
   # (see scripts/plugin_checks.sh): nothing is published if they fail.

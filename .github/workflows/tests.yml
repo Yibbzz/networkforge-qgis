@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_dispatch:   # a "Run workflow" button on the Actions page
 
+# Read-only unless a job asks for more.
+permissions:
+  contents: read
+
 jobs:
   test:
     name: QGIS ${{ matrix.qgis }}
