@@ -5,7 +5,7 @@ Before that happens the user is shown exactly what will be installed,
 from where and into which folder, and nothing is fetched unless they
 agree. Without QGIS's windows (qgis_process, tests) there is nobody to
 ask: the person who typed the command asked for the tool to run, and the
-same list goes to the log.
+same list goes to the log. Only QGIS desktop (`qgis.utils.iface`) asks.
 """
 
 from qgis.core import QgsApplication, QgsProcessingException
@@ -21,9 +21,18 @@ DECLINED = (
 
 
 def _can_ask():
-    """Whether a question can be put to the user: QGIS with its windows,
-    and on the thread that may show one (a tool inside a model is prepared
-    on another)."""
+    """Whether a question can be put to the user: QGIS desktop, with its
+    main window, on the thread that may show a window (a tool inside a
+    model is prepared on another).
+
+    qgis_process has no main window (`iface` is None). Asking there opened
+    a box nobody could see or answer, on Windows, and the tool waited for
+    ever: what kind of display Qt has is no guide, only QGIS desktop is.
+    """
+    from qgis import utils
+
+    if utils.iface is None or utils.iface.mainWindow() is None:
+        return False
     app = QgsApplication.instance()
     if not isinstance(app, QApplication) or app.platformName() == "offscreen":
         return False
@@ -32,10 +41,9 @@ def _can_ask():
 
 def ask(summary, details):
     """Show what will be installed; True if the user chooses Install."""
-    from qgis.utils import iface
+    from qgis import utils
 
-    parent = iface.mainWindow() if iface is not None else None
-    box = QMessageBox(parent)
+    box = QMessageBox(utils.iface.mainWindow())
     box.setIcon(QMessageBox.Icon.Question)
     box.setWindowTitle("NetworkForge: install the engine?")
     box.setText("NetworkForge needs to download its engine before this tool can run.")

@@ -20,6 +20,12 @@ from qgis.core import QgsProcessingException
 
 from networkforge_qgis import consent, engine
 
+# Before conftest's nobody_to_ask fixture swaps it out for each test.
+REAL_CAN_ASK = consent._can_ask
+# The Python the stand-in engines run with (see conftest.FAKE_PYTHON): on
+# macOS QGIS's own can't start without the settings the plugin clears.
+PYTHON = os.environ.get("NF_TEST_FAKE_PYTHON") or sys.executable
+
 
 # ---------------------------------------------------------------- the lists
 
@@ -270,6 +276,15 @@ def test_nobody_is_asked_when_everything_is_installed(
     assert any("exactly a version this plugin pins" in line for line in feedback.infos)
 
 
+def test_nobody_is_asked_without_qgis_desktop(monkeypatch):
+    # qgis_process has no main window. On Windows the box opened there
+    # anyway, unseen, and the tool waited for ever.
+    from qgis import utils
+
+    monkeypatch.setattr(utils, "iface", None)
+    assert REAL_CAN_ASK() is False
+
+
 def test_reinstalling_asks_even_with_an_engine_there(
         provider, fake_engine, feedback, monkeypatch):
     _pretend_installed(engine.base_dir(), engine.locked_packages(engine.ENGINE_LOCK))
@@ -296,7 +311,7 @@ def test_cancelling_also_stops_the_programs_the_engine_started(
         " flush=True)\n"
         "time.sleep(120)\n"
     )
-    monkeypatch.setattr(engine, "_engine_cmd", lambda: [sys.executable, "-c", script])
+    monkeypatch.setattr(engine, "_engine_cmd", lambda: [PYTHON, "-c", script])
     children = []
 
     def on_event(event):

@@ -105,7 +105,10 @@ What follows from that:
   downloaded, from where and into which folder (the package list under
   "Show Details"), with Install / Cancel. Without windows
   (`qgis_process`, tests, a tool inside a model) nobody can be asked:
-  the list goes to the log and the install goes ahead. "Engine
+  the list goes to the log and the install goes ahead. "Windows" means
+  `qgis.utils.iface` is None (no QGIS desktop main window), never the Qt
+  platform: on Windows `qgis_process` opened the box unseen and hung CI
+  for an hour (2026-11-15). "Engine
   information" lists every installed package and says if any differs
   from the pinned versions (`engine.unexpected_packages`).
 - On first use: ensure `uv` is available: the plugin's own copy if it is
