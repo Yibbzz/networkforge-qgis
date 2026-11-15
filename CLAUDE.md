@@ -140,8 +140,8 @@ The engine can't see QGIS memory, so:
 
 ## Engine contract (v1.4.0; v1.0.0 was the first stable one)
 
-Full reference: the engine README ("Command line", "For programs driving
-the CLI", "Outputs") and the docstring at the top of `src/networkforge/cli.py`.
+Full reference: the engine's `docs/reference.md` ("Command line", "For programs
+driving the command line", "Outputs"; in the README up to v1.4.1) and the docstring at the top of `src/networkforge/cli.py`.
 
 Commands:
 - `networkforge info --json` - one event with: `version`, `presets`
