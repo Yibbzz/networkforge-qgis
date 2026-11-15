@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- **Everything the plugin installs is pinned and checked.** The engine
+  now comes from PyPI at one exact version, with every package it needs
+  at the version the engine was tested with, and uv (the installer) at
+  one exact version. Each file is checked against a checksum that ships
+  with the plugin; anything else is refused. Before, the newest version
+  of each was taken on the day of the install, unchecked.
+- **Asks before downloading.** The first time a tool needs the engine
+  (or "Add traffic" needs Valhalla), a box lists what will be
+  downloaded, from where and into which folder, with every package and
+  version under Show Details. Nothing is fetched unless you choose
+  Install. From the command line (`qgis_process`) the list goes to the
+  log instead.
+- "Engine information" lists every installed package with its version
+  and says if any differs from the pinned ones.
+- Cancelling a tool also stops the programs the engine started ("Add
+  traffic" could leave Valhalla's programs running).
+- Tools start a few seconds sooner: the engine's version is read from
+  its files instead of by starting it.
+- Uses engine v1.4.1.
+
 ## 0.9.0 - 2026-10-30
 
 - Uses engine v1.4.0.

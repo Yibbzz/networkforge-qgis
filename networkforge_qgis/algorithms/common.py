@@ -27,7 +27,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QObject, pyqtSignal
 
-from .. import compat, engine, styling
+from .. import compat, consent, engine, styling
 
 # Added to the exported features so the engine's messages can name QGIS
 # feature ids, whatever ids the exported file ends up with.
@@ -125,6 +125,53 @@ def error_text(error, code, describe=None):
     if error.get("guide"):
         lines.append(f"How to fix this: {engine.guide_url(error['guide'])}")
     return "\n".join(lines)
+
+
+def export_fields(sources):
+    """The fields of the file handed to the engine: those of the sources
+    (each name once) and ID_FIELD, which carries each feature's QGIS id."""
+    fields = QgsFields()
+    for source in sources:
+        for field in source.fields():
+            # A field called "fid" would clash with the GeoPackage's own ids.
+            if (field.name().lower() not in ("fid", ID_FIELD)
+                    and fields.indexOf(field.name()) < 0):
+                fields.append(field)
+    fields.append(compat.whole_number_field(ID_FIELD))
+    return fields
+
+
+def copy_features(source, sink, fields, feedback, export_id=None, transform=None,
+                  what="feature"):
+    """Write a source's features to the engine's file; returns how many.
+
+    Each gets ID_FIELD = `export_id(its QGIS id)` (the id itself by
+    default), so the engine's messages can name it.
+    """
+    names = [field.name() for field in source.fields()]
+    kept = [(i, name) for i, name in enumerate(names)
+            if name != ID_FIELD and fields.indexOf(name) >= 0]
+    count = 0
+    # Geometry problems are the engine's to report, with feature ids.
+    for feature in source.getFeatures(QgsFeatureRequest(), compat.SKIP_GEOMETRY_CHECKS):
+        if feedback.isCanceled():
+            break
+        out = QgsFeature(fields)
+        geometry = feature.geometry()
+        if transform is not None:
+            geometry.transform(transform)
+        out.setGeometry(geometry)
+        attributes = feature.attributes()
+        for i, name in kept:
+            out[name] = attributes[i]
+        out[ID_FIELD] = feature.id() if export_id is None else export_id(feature.id())
+        if not sink.addFeature(out, QgsFeatureSink.Flag.FastInsert):
+            raise QgsProcessingException(
+                f"Could not prepare {what} {feature.id()} for the engine: "
+                f"{sink.lastError()}"
+            )
+        count += 1
+    return count
 
 
 class FeatureSelector(QObject):
@@ -262,8 +309,13 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
             return False, "Choose a custom network layer, a points layer, or both."
         return super().checkParameterValues(parameters, context)
 
+    # Whether the tool needs Valhalla as well as the engine ("Add traffic").
+    NEEDS_TRAFFIC = False
+
     def prepareAlgorithm(self, parameters, context, feedback):
         # Runs on the main thread, before the work starts on another one.
+        # Nothing is downloaded without the user having seen what and agreed.
+        consent.approve_install(feedback, traffic=self.NEEDS_TRAFFIC)
         self._selectors = {}
         self._point_base = None
         for role in (self.CUSTOM, self.POINTS):
@@ -298,14 +350,7 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
             )
         sources = [source for source in (lines, points) if source is not None]
 
-        # A field called "fid" would clash with the GeoPackage's own ids.
-        fields = QgsFields()
-        for source in sources:
-            for field in source.fields():
-                if (field.name().lower() not in ("fid", ID_FIELD)
-                        and fields.indexOf(field.name()) < 0):
-                    fields.append(field)
-        fields.append(compat.whole_number_field(ID_FIELD))
+        fields = export_fields(sources)
 
         if points is not None:
             ids_only = QgsFeatureRequest().setNoAttributes()
@@ -323,32 +368,13 @@ class CustomNetworkAlgorithm(QgsProcessingAlgorithm):
         counts = []
         for source in sources:
             is_point = source is points
-            names = [field.name() for field in source.fields()]
             transform = None
             if source.sourceCrs() != sources[0].sourceCrs():
                 transform = QgsCoordinateTransform(
                     source.sourceCrs(), sources[0].sourceCrs(), context.transformContext())
-            count = 0
-            # Geometry problems are the engine's to report, with feature ids.
-            for feature in source.getFeatures(QgsFeatureRequest(), compat.SKIP_GEOMETRY_CHECKS):
-                if feedback.isCanceled():
-                    break
-                out = QgsFeature(fields)
-                geometry = feature.geometry()
-                if transform is not None:
-                    geometry.transform(transform)
-                out.setGeometry(geometry)
-                for name, value in zip(names, feature.attributes()):
-                    if name != ID_FIELD and fields.indexOf(name) >= 0:
-                        out[name] = value
-                out[ID_FIELD] = self._export_id(feature.id(), is_point)
-                if not sink.addFeature(out, QgsFeatureSink.Flag.FastInsert):
-                    raise QgsProcessingException(
-                        f"Could not prepare feature {feature.id()} for the engine: "
-                        f"{sink.lastError()}"
-                    )
-                count += 1
-            counts.append(count)
+            counts.append(copy_features(
+                source, sink, fields, feedback, transform=transform,
+                export_id=lambda fid, is_point=is_point: self._export_id(fid, is_point)))
         del sink  # closes the file so the engine can read it
         if sum(counts) == 0:
             raise QgsProcessingException(

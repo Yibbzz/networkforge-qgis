@@ -13,10 +13,7 @@ import re
 from pathlib import Path
 
 from qgis.core import (
-    QgsFeature,
     QgsFeatureRequest,
-    QgsFeatureSink,
-    QgsFields,
     QgsProcessingException,
     QgsProcessingOutputFile,
     QgsProcessingParameterFeatureSource,
@@ -27,7 +24,7 @@ from qgis.core import (
 )
 
 from .. import compat, engine
-from .common import ID_FIELD, CustomNetworkAlgorithm
+from .common import ID_FIELD, CustomNetworkAlgorithm, copy_features, export_fields
 
 BAND_COLUMNS = ["Name", "Days", "Time", "Roads", "Factor or speed"]
 MPH = 1.609344
@@ -81,6 +78,7 @@ class AddTrafficAlgorithm(CustomNetworkAlgorithm):
     CUSTOM = "STREETS"
     SPEED_TABLE = "SPEED_TABLE"
     OUTPUT = "OUTPUT"
+    NEEDS_TRAFFIC = True
 
     def name(self):
         return "add_traffic"
@@ -281,30 +279,11 @@ class AddTrafficAlgorithm(CustomNetworkAlgorithm):
     def export_streets(self, parameters, context, feedback):
         """Write the single streets to a temporary GeoPackage, with their QGIS ids."""
         source = self.parameterAsSource(parameters, self.CUSTOM, context)
-        fields = QgsFields()
-        for field in source.fields():
-            if field.name().lower() not in ("fid", ID_FIELD):
-                fields.append(field)
-        fields.append(compat.whole_number_field(ID_FIELD))
+        fields = export_fields([source])
         path = QgsProcessingUtils.generateTempFilename("nf_streets.gpkg", context)
         sink, _ = QgsProcessingUtils.createFeatureSink(
             path, context, fields, source.wkbType(), source.sourceCrs())
-        names = [field.name() for field in source.fields()]
-        count = 0
-        for feature in source.getFeatures(QgsFeatureRequest(), compat.SKIP_GEOMETRY_CHECKS):
-            if feedback.isCanceled():
-                break
-            out = QgsFeature(fields)
-            out.setGeometry(feature.geometry())
-            for name, value in zip(names, feature.attributes()):
-                if fields.indexOf(name) >= 0 and name != ID_FIELD:
-                    out[name] = value
-            out[ID_FIELD] = feature.id()
-            if not sink.addFeature(out, QgsFeatureSink.Flag.FastInsert):
-                raise QgsProcessingException(
-                    f"Could not prepare street {feature.id()} for the engine: "
-                    f"{sink.lastError()}")
-            count += 1
+        count = copy_features(source, sink, fields, feedback, what="street")
         del sink  # closes the file so the engine can read it
         if count == 0:
             raise QgsProcessingException(

@@ -1,0 +1,8 @@
+# uv 0.13.8: its builds on GitHub and their SHA-256 checksums.
+# Written by scripts/lock_engine.sh; don't edit by hand.
+uv-x86_64-pc-windows-msvc.zip 529e78a9cec6cd7e3e014f7ecd8bda0c113969d4ed0f2efeedb85c30943325b8
+uv-aarch64-pc-windows-msvc.zip 59e6d919bed1f72035e622a7c930058f08a8931c4c78ceaf9f56e7fb74dd2c48
+uv-x86_64-apple-darwin.tar.gz a04c2ffeac28b2003a2c13caf538ab425fcd7def3e4a41571f4a8fb370a66af3
+uv-aarch64-apple-darwin.tar.gz 6b71028a6b904f2ae3340ef52e595512de807d06c0a20eaef2f692581b246558
+uv-x86_64-unknown-linux-musl.tar.gz 61fb26dabc4f0cf1d050fc6c67d40e43e4fae2994af21ebc1e050b233bf2b5ed
+uv-aarch64-unknown-linux-musl.tar.gz 0c6f8593fcf1eadfc60e663b685c408267559d7c5d61c689bbb9f3a7e369ba32

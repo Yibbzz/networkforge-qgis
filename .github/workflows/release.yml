@@ -11,6 +11,10 @@ name: Release
 # save it as the repository secret QGIS_PLUGIN_TOKEN. Every tag then
 # uploads the new version. (OSGEO_USERNAME / OSGEO_PASSWORD still work as
 # the older way in.)
+#
+# This workflow publishes, so what it runs is fixed: each action by its
+# commit (the tag in the comment says which release that is) and
+# qgis-plugin-ci by its version. To move to a newer one, change both.
 on:
   push:
     tags: ["v*"]
@@ -25,8 +29,8 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6
         with:
           python-version: "3.12"
       - run: pip install bandit detect-secrets flake8
@@ -38,14 +42,15 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6
         with:
           python-version: "3.12"
 
       - name: Install qgis-plugin-ci
-        run: pip install qgis-plugin-ci
+        # A fixed version: this job holds the token that publishes the plugin.
+        run: pip install qgis-plugin-ci==2.11.0
 
       - name: Create the GitHub release
         env:

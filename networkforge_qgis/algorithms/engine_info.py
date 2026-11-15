@@ -11,7 +11,7 @@ from qgis.core import (
     QgsProcessingParameterBoolean,
 )
 
-from .. import engine
+from .. import consent, engine
 
 
 class EngineInfoAlgorithm(QgsProcessingAlgorithm):
@@ -31,8 +31,11 @@ class EngineInfoAlgorithm(QgsProcessingAlgorithm):
             "and what it supports. The engine does all the network work; "
             "this plugin runs it as a separate program.\n\n"
             "If the engine is not installed yet, this installs it into its "
-            "own folder inside your QGIS profile. That happens once, needs "
-            "an internet connection and can take a few minutes.\n\n"
+            "own folder inside your QGIS profile, after showing you what "
+            "will be downloaded. That happens once, needs an internet "
+            "connection and can take a few minutes. The tool lists every "
+            "installed package with its version, and says if any differs "
+            "from the versions this plugin pins.\n\n"
             "Tick \"Reinstall the engine\" to replace an installation that "
             "has stopped working.\n\n"
             "Map data © OpenStreetMap contributors (ODbL)."
@@ -56,6 +59,12 @@ class EngineInfoAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingOutputString(self.ENGINE_PATH, "Engine program")
         )
 
+    def prepareAlgorithm(self, parameters, context, feedback):
+        # On the main thread: nothing is downloaded unless the user agrees.
+        consent.approve_install(
+            feedback, reinstall=self.parameterAsBoolean(parameters, self.REINSTALL, context))
+        return True
+
     def processAlgorithm(self, parameters, context, feedback):
         try:
             if self.parameterAsBoolean(parameters, self.REINSTALL, context):
@@ -72,6 +81,19 @@ class EngineInfoAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(f"NetworkForge engine version: {info['version']}")
         feedback.pushInfo(f"Installed at: {engine.venv_dir()}")
         feedback.pushInfo(f"Log file: {engine.log_path()}")
+        installed = engine.installed_packages()
+        feedback.pushInfo(
+            f"Installed packages ({len(installed)}): "
+            + ", ".join(f"{name} {version}" for name, version in sorted(installed.items())))
+        unexpected = engine.unexpected_packages()
+        if unexpected:
+            feedback.pushWarning(
+                "These differ from the versions this plugin pins: "
+                + "; ".join(unexpected)
+                + ". Tick \"Reinstall the engine\" to put the pinned versions back.")
+        else:
+            feedback.pushInfo(
+                "Every installed package is exactly a version this plugin pins.")
         feedback.pushInfo("Presets: " + ", ".join(info["presets"]))
         feedback.pushInfo("Network types: " + ", ".join(info["network_types"]))
         feedback.pushInfo("Travel modes: " + ", ".join(info["modes"]))

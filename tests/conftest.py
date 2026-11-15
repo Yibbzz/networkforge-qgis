@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from qgis.core import QgsApplication, QgsProcessingFeedback
 
-from networkforge_qgis import engine
+from networkforge_qgis import consent, engine
 from networkforge_qgis.provider import NetworkForgeProvider
 
 FAKE_ENGINE = Path(__file__).parent / "fake_engine.py"
@@ -45,6 +45,12 @@ class FakeEngine:
     def values(self, flag):
         args = self.args
         return [args[i + 1] for i, arg in enumerate(args) if arg == flag]
+
+
+@pytest.fixture(autouse=True)
+def nobody_to_ask(monkeypatch):
+    """No test may open the "install the engine?" box: it would wait for ever."""
+    monkeypatch.setattr(consent, "_can_ask", lambda: False)
 
 
 @pytest.fixture

@@ -60,7 +60,7 @@ What follows from that:
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v1.4.0`) in one constant. The
+- **Pin the engine version** (currently `v1.4.1`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -89,26 +89,51 @@ What follows from that:
 ## Architecture
 
 ### Engine management (`engine.py`)
-- On first use: ensure `uv` is available (use one on PATH, otherwise
-  `pip install --target <profile>/networkforge/uv uv` with QGIS's Python -
-  uv is a standalone binary in a wheel, and `--target` keeps it out of
-  QGIS's own packages; where QGIS's Python has no pip, as in the Flatpak
-  QGIS, download uv's own build from its GitHub releases through
-  `QgsBlockingNetworkRequest` instead), then create an environment in the QGIS profile
-  folder, e.g.
-  `QgsApplication.qgisSettingsDirPath()/networkforge/engine-venv`,
-  and install the pinned engine from the tag's zip:
-  `uv pip install "networkforge @ https://github.com/Yibbzz/networkforge/archive/refs/tags/v1.4.0.zip"`
-  (with `uv venv --python 3.12 --python-preference only-managed` - uv
-  downloads its own Python, so QGIS's Python version doesn't matter.
-  Without `only-managed` uv reuses a matching Python it finds; the
-  Flatpak QGIS's Python then leaks QGIS's numpy into the engine). Don't use the `git+https://` form: it
-  needs git installed, which most Windows users don't have.
+- **Everything installed is pinned and checksum-checked (decided
+  2026-11-15: the user's worry was unpinned code reaching users'
+  machines).** `networkforge_qgis/locks/` holds the lists:
+  `engine.txt` (the engine from PyPI and every package it needs, at the
+  versions the engine's own `uv.lock` was tested with), `traffic.txt`
+  (the same plus pyvalhalla), `uv.txt` (uv as a pip package) and
+  `uv-downloads.txt` (SHA-256 of uv's own builds). `scripts/lock_engine.sh
+  <engine version> <uv version>` writes them. The installers are run with
+  `--require-hashes`, so nothing but those exact files installs. Never
+  go back to a bare package name, a GitHub zip or `releases/latest`.
+- **Nothing is downloaded unseen** (`consent.py`): every tool's
+  `prepareAlgorithm` (main thread) calls `consent.approve_install`,
+  which, when something is missing, shows a box listing what will be
+  downloaded, from where and into which folder (the package list under
+  "Show Details"), with Install / Cancel. Without windows
+  (`qgis_process`, tests, a tool inside a model) nobody can be asked:
+  the list goes to the log and the install goes ahead. "Engine
+  information" lists every installed package and says if any differs
+  from the pinned versions (`engine.unexpected_packages`).
+- On first use: ensure `uv` is available: the plugin's own copy if it is
+  the pinned `UV_VERSION` (`uv/version.txt` says), else one on PATH (the
+  user's own), else fetch the pinned one:
+  `pip install --require-hashes --target <profile>/networkforge/uv -r locks/uv.txt`
+  with QGIS's Python (`--target` keeps it out of QGIS's own packages);
+  where QGIS's Python has no pip, as in the Flatpak QGIS, download uv's
+  own build of that version from its GitHub release through
+  `QgsBlockingNetworkRequest` and refuse it unless its SHA-256 is the
+  pinned one. Then create an environment in the QGIS profile folder
+  (`<profile>/networkforge/engine-venv`) with
+  `uv venv --python 3.12 --python-preference only-managed` (uv downloads
+  its own Python, so QGIS's Python version doesn't matter; without
+  `only-managed` uv reuses a matching Python it finds, and the Flatpak
+  QGIS's Python then leaks QGIS's numpy into the engine) and
+  `uv pip install --require-hashes -r locks/engine.txt`.
 - When a tool first needs the engine (not on QGIS startup, which would
-  slow every start): run `networkforge --version`; install or replace
-  the engine if it doesn't match the pinned version, showing progress in
-  the tool's log. Clear message when offline. A startup offer to install
-  can be added later if testers find the slow first run surprising.
+  slow every start): `installed_version()` reads the version from the
+  environment's files (`networkforge-*.dist-info`; starting the engine
+  for `--version` cost seconds before every run); install or replace
+  the engine if it isn't the pinned version, showing progress in the
+  tool's log. `install()` then does run `networkforge --version` once
+  (`reported_version`) to see the engine works. Clear message when
+  offline.
+- Cancel (and any failure while reading events) ends the engine and the
+  programs it started (`engine._stop`: a process group on Linux / macOS,
+  `taskkill /T` on Windows); Valhalla's programs used to be left running.
 - Run everything as a subprocess of the environment's `networkforge`
   executable. On Windows pass `creationflags=subprocess.CREATE_NO_WINDOW`
   so no console window flashes. Keep stderr in a log file for support.
@@ -138,7 +163,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v1.4.0; v1.0.0 was the first stable one)
+## Engine contract (v1.4.1; v1.0.0 was the first stable one)
 
 Full reference: the engine's `docs/reference.md` ("Command line", "For programs
 driving the command line", "Outputs"; in the README up to v1.4.1) and the docstring at the top of `src/networkforge/cli.py`.
@@ -317,6 +342,8 @@ networkforge-qgis/
 │   ├── plugin.py               # registers/unregisters the Processing provider
 │   ├── provider.py
 │   ├── engine.py               # install/version-check/run the engine CLI, parse events
+│   ├── consent.py              # asks before anything is downloaded
+│   ├── locks/                  # exactly what is installed: versions and checksums
 │   ├── algorithms/
 │   │   ├── common.py           # base class: export layer, run engine, select features
 │   │   ├── build_network.py    # "Build scenario network"
@@ -394,10 +421,15 @@ networkforge-qgis/
   and the user's own) are for routers, QGIS's own network tools ignore
   them; existing streets can be re-tagged or removed, not redrawn;
   county-sized areas need a lot of memory.
-- Upgrading the engine: change `ENGINE_VERSION` in `engine.py`, save the
-  new `networkforge info --json` as `engine_info.json` (indent 1), and
-  run the end-to-end tests (`pytest -m engine`), which install the pinned
-  tag from GitHub - so the tag must be pushed first.
+- Upgrading the engine: the version must be on PyPI first (the
+  engine's release workflow puts each tag there). Run
+  `scripts/lock_engine.sh <version> <uv version>`, change
+  `ENGINE_VERSION` in `engine.py`, save the new
+  `networkforge info --json` as `engine_info.json` (indent 1), change the
+  `blob/v<version>/docs` links in README.md and docs/, and run the
+  end-to-end tests (`pytest -m engine`). Upgrading uv: the same script,
+  and `UV_VERSION`. `tests/test_pinned_install.py` checks the lists and
+  the constants agree.
 
 ## Development environment
 - Develop on the host with **QGIS LTR** (3.40+) installed, not in the

@@ -32,10 +32,14 @@ Together they give QGIS a routable network of your own, for free.
 In QGIS (3.34 or newer; Windows, macOS or Linux): **Plugins > Manage and
 Install Plugins**, search for **NetworkForge**, **Install Plugin**.
 
-The first time you run a tool, the plugin downloads its engine into a
-`networkforge` folder in your QGIS profile (once, a few minutes, about
-600 MB). Nothing is added to QGIS itself. `engine.log` in that folder
-helps when reporting a problem.
+The first time you run a tool, the plugin shows you what it needs to
+download (its engine, with every package and version listed) and waits
+for you to choose **Install**. It goes into a `networkforge` folder in
+your QGIS profile (once, a few minutes, about 600 MB); nothing is added
+to QGIS itself. Every version is fixed by the plugin and every file is
+checked against a checksum that ships with it, so only what was tested
+can be installed. **Engine information** lists what is installed.
+`engine.log` in that folder helps when reporting a problem.
 
 ## Start here
 
@@ -69,7 +73,7 @@ preset for all of them. The same layer can change or remove existing
 streets and ban turns; a points layer adds bollards, signals and
 crossings.
 
-The engine's **[network rules](https://github.com/Yibbzz/networkforge/blob/v1.4.0/docs/network-rules.md)**
+The engine's **[network rules](https://github.com/Yibbzz/networkforge/blob/v1.4.1/docs/network-rules.md)**
 say what each field means and where lines join. When a line is wrong,
 the tool selects it and links to the rule that explains why.
 
