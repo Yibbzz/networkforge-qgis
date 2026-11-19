@@ -29,7 +29,7 @@ from qgis.PyQt.QtNetwork import QNetworkRequest
 
 # The engine's CLI flags, JSON events and exit codes are the contract, so
 # the version is pinned here and nowhere else.
-ENGINE_VERSION = "1.4.1"
+ENGINE_VERSION = "1.4.2"
 ENGINE_REPO = "https://github.com/Yibbzz/networkforge"
 # uv, the installer used for the engine: pinned too.
 UV_VERSION = "0.13.8"

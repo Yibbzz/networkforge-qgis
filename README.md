@@ -73,7 +73,7 @@ preset for all of them. The same layer can change or remove existing
 streets and ban turns; a points layer adds bollards, signals and
 crossings.
 
-The engine's **[network rules](https://github.com/Yibbzz/networkforge/blob/v1.4.1/docs/network-rules.md)**
+The engine's **[network rules](https://github.com/Yibbzz/networkforge/blob/v1.4.2/docs/network-rules.md)**
 say what each field means and where lines join. When a line is wrong,
 the tool selects it and links to the rule that explains why.
 

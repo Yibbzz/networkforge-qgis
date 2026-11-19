@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.10.0 - 2026-11-19
 
 - **Everything the plugin installs is pinned and checked.** The engine
   now comes from PyPI at one exact version, with every package it needs
@@ -20,7 +20,7 @@
   traffic" could leave Valhalla's programs running).
 - Tools start a few seconds sooner: the engine's version is read from
   its files instead of by starting it.
-- Uses engine v1.4.1.
+- Uses engine v1.4.2.
 
 ## 0.9.0 - 2026-10-30
 
