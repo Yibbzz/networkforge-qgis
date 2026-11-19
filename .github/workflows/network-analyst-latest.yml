@@ -31,7 +31,7 @@ jobs:
       QT_QPA_PLATFORM: offscreen
       NF_NETWORK_ANALYST: latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install test tools
         env:
