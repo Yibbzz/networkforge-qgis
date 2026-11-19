@@ -49,7 +49,7 @@ Open Active Profile Folder**).
       four tools: Build scenario network, Build standalone network,
       Check custom network layer, Engine information.
 - [ ] **1.3** Run **Engine information**. The log ends with
-      `NetworkForge engine version: 1.4.1`. The first time, a box asks
+      `NetworkForge engine version: 1.4.2`. The first time, a box asks
       "NetworkForge: install the engine?" and lists what will be
       downloaded (**Show Details** has every package and version).
       **Cancel** stops the tool with "Nothing was installed"; run it

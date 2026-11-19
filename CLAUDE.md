@@ -60,7 +60,7 @@ What follows from that:
 - **Never import the engine into QGIS's Python.** The engine runs in its
   own environment, as a separate process, through its CLI (see below).
   QGIS's Python lacks geopandas/osmnx/osmium and must not be modified.
-- **Pin the engine version** (currently `v1.4.1`) in one constant. The
+- **Pin the engine version** (currently `v1.4.2`) in one constant. The
   CLI's flags, JSON events and exit codes are the contract; upgrading
   the engine is a deliberate change.
 - **No attribution lines in commits or PRs** (no `Co-Authored-By: Claude`,
@@ -166,7 +166,7 @@ The engine can't see QGIS memory, so:
   `=` form; western longitudes are negative).
 - Load outputs with `QgsVectorLayer(f"{path}|layername=edges", name, "ogr")`.
 
-## Engine contract (v1.4.1; v1.0.0 was the first stable one)
+## Engine contract (v1.4.2; v1.0.0 was the first stable one)
 
 Full reference: the engine's `docs/reference.md` ("Command line", "For programs
 driving the command line", "Outputs"; in the README up to v1.4.1) and the docstring at the top of `src/networkforge/cli.py`.

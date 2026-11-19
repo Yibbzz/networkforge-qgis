@@ -189,9 +189,9 @@ joblib==1.6.0 \
 narwhals==2.26.0 \
     --hash=sha256:29326d74f107c347fd1009bd58e38d9f7c7c5b51e6de97bc93dbc325d9038b54 \
     --hash=sha256:6b9cadca82f375c7e4cf584fdc86ca25da54827307a9c58f94547ee6104b82dd
-networkforge==1.4.1 \
-    --hash=sha256:689c8a761aadc2aeb8ae1de7302f9829e302ed162f81c9e8ce6cbbedf6f90357 \
-    --hash=sha256:95f33040e8769be5a3724d815749e1b19bb475fba67ad561923e8274ff5c518c
+networkforge==1.4.2 \
+    --hash=sha256:c403f98984dc55f5fcf7bbe905b7fda109bfe6f63dc7b7206773bcae37d6e76d \
+    --hash=sha256:ce933cb1b604c47a46f374eac11f4a46b3034f7772d7a10db3122630cbf09503
 networkx==3.6.1 \
     --hash=sha256:26b7c357accc0c8cde558ad486283728b65b6a95d85ee1cd66bafab4c8168509 \
     --hash=sha256:d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762

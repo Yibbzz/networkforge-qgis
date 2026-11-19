@@ -1,6 +1,6 @@
 {
  "event": "info",
- "version": "1.4.1",
+ "version": "1.4.2",
  "presets": {
   "motorway": {
    "tags": {
